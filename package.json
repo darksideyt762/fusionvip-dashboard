@@ -1,5 +1,9 @@
 {
   "name": "fusionvip-dashboard",
   "version": "1.0.0",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "buffer": "^6.0.3"
+  }
 }
