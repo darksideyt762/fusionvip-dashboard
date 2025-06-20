@@ -1,4 +1,4 @@
-const api = path => `/netlify/functions/${path}`;
+const api = path => `/.netlify/functions/${path}`;
 const tableBody = document.getElementById('hwidTable');
 const form = document.getElementById('addForm');
 const searchInput = document.getElementById('search');
