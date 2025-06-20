@@ -7,6 +7,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-red-600 to-yellow-400 min-h-screen p-4 text-white font-sans">
+  <script>
+  const PASSWORD = "fusionvip123"; // 🔒 change this to your secret
+  if (!sessionStorage.getItem("loggedIn")) {
+    const input = prompt("Enter password to access the dashboard:");
+    if (input === PASSWORD) {
+      sessionStorage.setItem("loggedIn", "true");
+    } else {
+      alert("❌ Incorrect password. Reload to try again.");
+      document.body.innerHTML = "";
+      throw new Error("Access Denied");
+    }
+  }
+  </script>
   <div class="max-w-5xl mx-auto space-y-4 animate-fade-in">
     <h1 class="text-3xl font-bold text-center">🔥 FusionVIP HWID Dashboard</h1>
     <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
@@ -24,7 +37,7 @@
             <th>HWID</th>
             <th>Username</th>
             <th>Expiry</th>
-            <th>Role</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
