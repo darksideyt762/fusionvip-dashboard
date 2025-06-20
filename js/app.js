@@ -20,12 +20,12 @@ function renderTable(list) {
     const tr = document.createElement('tr');
     tr.className = "bg-white/10 rounded";
     tr.innerHTML = `
-      <td>${hwid}</td>
-      <td>${user}</td>
-      <td>${date}</td>
-      <td>${role}</td>
+      <td contenteditable="false" data-key="hwid">${hwid}</td>
+      <td contenteditable="false" data-key="user">${user}</td>
+      <td contenteditable="false" data-key="date">${date}</td>
+      <td contenteditable="false" data-key="role">${role}</td>
       <td class="space-x-2">
-        <button onclick="editLine(${index})" class="px-2 py-1 bg-yellow-300 text-black text-xs rounded">Edit</button>
+        <button onclick="enableEdit(this, ${index})" class="px-2 py-1 bg-yellow-300 text-black text-xs rounded">Edit</button>
         <button onclick="deleteLine(${index})" class="px-2 py-1 bg-red-500 text-white text-xs rounded">Delete</button>
       </td>`;
     tableBody.appendChild(tr);
@@ -49,7 +49,7 @@ form.onsubmit = async (e) => {
     await fetchHWIDs();
     form.reset();
   } else {
-    alert("Failed to add line.");
+    alert("❌ Failed to add line.");
   }
 };
 
@@ -63,25 +63,39 @@ async function deleteLine(index) {
   else alert("❌ Failed to delete.");
 }
 
-function editLine(index) {
-  const [hwid, user, expiry, role] = hwidList[index].split(' ');
-  const newHwid = prompt("HWID:", hwid);
-  const newUser = prompt("Username:", user);
-  const newDate = prompt("Expiry Date (YYYY-MM-DD):", expiry);
-  const newRole = prompt("Role:", role);
-  if (!newHwid || !newUser || !newDate || !newRole) return;
-  const line = `${newHwid} ${newUser} ${newDate} ${newRole}`;
-  updateLine(index, line);
+function enableEdit(button, index) {
+  const row = button.closest('tr');
+  const cells = row.querySelectorAll('td[data-key]');
+  cells.forEach(cell => cell.setAttribute('contenteditable', 'true'));
+
+  button.textContent = 'Save';
+  button.classList.remove('bg-yellow-300');
+  button.classList.add('bg-green-500');
+  button.onclick = () => saveEdit(button, index);
 }
 
-async function updateLine(index, line) {
+async function saveEdit(button, index) {
+  const row = button.closest('tr');
+  const cells = row.querySelectorAll('td[data-key]');
+
+  const hwid = cells[0].textContent.trim();
+  const user = cells[1].textContent.trim();
+  const date = cells[2].textContent.trim();
+  const role = cells[3].textContent.trim();
+
+  const line = `${hwid} ${user} ${date} ${role}`;
+
   const res = await fetch(api('edit-hwid'), {
     method: "POST",
     body: JSON.stringify({ index, line })
   });
   const result = await res.json();
-  if (result.success) await fetchHWIDs();
-  else alert("❌ Failed to edit.");
+
+  if (result.success) {
+    await fetchHWIDs();
+  } else {
+    alert("❌ Failed to edit.");
+  }
 }
 
 searchInput.addEventListener('input', () => {
