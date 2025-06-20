@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FusionVIP Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-red-600 to-yellow-400 min-h-screen p-4 text-white font-sans">
+  <div class="max-w-5xl mx-auto space-y-4 animate-fade-in">
+    <h1 class="text-3xl font-bold text-center">🔥 FusionVIP HWID Dashboard</h1>
+    <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
+      <input type="text" placeholder="HWID" id="hwid" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+      <input type="text" placeholder="Username" id="username" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+      <input type="date" id="expiry" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+      <input type="text" placeholder="Role" id="role" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+      <button type="submit" class="px-4 py-2 bg-white text-red-600 font-bold rounded hover:bg-yellow-300 transition">Add</button>
+    </form>
+    <input type="text" id="search" placeholder="🔍 Search by username..." class="w-full p-2 rounded bg-white/20 placeholder-white"/>
+    <div class="overflow-auto max-h-[500px]">
+      <table class="w-full text-sm mt-2 text-left border-separate border-spacing-y-2">
+        <thead>
+          <tr class="text-white uppercase text-xs bg-white/10">
+            <th>HWID</th>
+            <th>Username</th>
+            <th>Expiry</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="hwidTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
