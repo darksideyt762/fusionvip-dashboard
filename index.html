@@ -1,50 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FusionVIP Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-red-600 to-yellow-400 min-h-screen p-4 text-white font-sans">
-  <script>
-  const PASSWORD = "fusionvip123"; // 🔒 change this to your secret
-  if (!sessionStorage.getItem("loggedIn")) {
-    const input = prompt("Enter password to access the dashboard:");
-    if (input === PASSWORD) {
-      sessionStorage.setItem("loggedIn", "true");
-    } else {
-      alert("❌ Incorrect password. Reload to try again.");
-      document.body.innerHTML = "";
-      throw new Error("Access Denied");
+  <style>
+    .divider {
+      height: 4px;
+      background: linear-gradient(to right, violet, black);
     }
-  }
-  </script>
-  <div class="max-w-5xl mx-auto space-y-4 animate-fade-in">
-    <h1 class="text-3xl font-bold text-center">🔥 FusionVIP HWID Dashboard</h1>
-    <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
-      <input type="text" placeholder="HWID" id="hwid" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
-      <input type="text" placeholder="Username" id="username" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
-      <input type="date" id="expiry" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
-      <input type="text" placeholder="Role" id="role" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
-      <button type="submit" class="px-4 py-2 bg-white text-red-600 font-bold rounded hover:bg-yellow-300 transition">Add</button>
-    </form>
-    <input type="text" id="search" placeholder="🔍 Search by username..." class="w-full p-2 rounded bg-white/20 placeholder-white"/>
-    <div class="overflow-auto max-h-[500px]">
-      <table class="w-full text-sm mt-2 text-left border-separate border-spacing-y-2">
-        <thead>
-          <tr class="text-white uppercase text-xs bg-white/10">
-            <th>HWID</th>
-            <th>Username</th>
-            <th>Expiry</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="hwidTable"></tbody>
-      </table>
+    .fade-in {
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-violet-800 to-black min-h-screen p-4 text-white font-sans">  <div id="auth" class="flex flex-col justify-center items-center min-h-screen">
+    <div class="bg-white/10 p-6 rounded-xl shadow-lg w-full max-w-sm fade-in">
+      <h2 class="text-xl font-bold mb-4 text-center">🔐 Enter Password</h2>
+      <input type="password" id="passwordInput" placeholder="Password" class="w-full p-2 rounded bg-white/20 placeholder-white mb-4" />
+      <button onclick="checkPassword()" class="w-full px-4 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 transition">Login</button>
     </div>
-  </div>
-  <script src="js/app.js"></script>
-</body>
+  </div>  <div id="dashboard" class="hidden max-w-5xl mx-auto space-y-4 fade-in">
+    <div class="divider"></div>
+    <h1 class="text-3xl font-bold text-center">🔥 FusionVIP HWID Dashboard</h1><form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md flex flex-wrap gap-4 items-end">
+  <input type="text" placeholder="HWID" id="hwid" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+  <input type="text" placeholder="Username" id="username" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+  <input type="date" id="expiry" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+  <input type="text" placeholder="Role" id="role" class="flex-1 p-2 rounded bg-white/20 placeholder-white" required />
+  <button type="submit" class="px-4 py-2 bg-white text-black font-bold rounded hover:bg-yellow-300 transition">Add</button>
+</form>
+
+<input type="text" id="search" placeholder="🔍 Search by username..." class="w-full p-2 rounded bg-white/20 placeholder-white"/>
+
+<div class="overflow-auto max-h-[500px]">
+  <table class="w-full text-sm mt-2 text-left border-separate border-spacing-y-2">
+    <thead>
+      <tr class="text-white uppercase text-xs bg-white/10">
+        <th>HWID</th>
+        <th>Username</th>
+        <th>Expiry</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="hwidTable"></tbody>
+  </table>
+</div>
+
+  </div>  <script>
+    const PASSWORD = "fusionvip123";
+
+    function checkPassword() {
+      const input = document.getElementById("passwordInput").value;
+      if (input === PASSWORD) {
+        sessionStorage.setItem("loggedIn", "true");
+        document.getElementById("auth").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+        window.onload(); // Trigger loading data
+      } else {
+        alert("❌ Incorrect password");
+      }
+    }
+
+    if (sessionStorage.getItem("loggedIn")) {
+      document.getElementById("auth").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+    }
+  </script>  <script src="js/app.js"></script></body>
 </html>
