@@ -36,7 +36,9 @@ form.onsubmit = async (e) => {
   e.preventDefault();
   const hwid = document.getElementById('hwid').value.trim();
   const username = document.getElementById('username').value.trim();
-  const expiry = document.getElementById('expiry').value;
+  const rawDate = document.getElementById('expiry').value;
+const [yyyy, mm, dd] = rawDate.split("-");
+const expiry = `${dd}-${mm}-${yyyy}`;
   const role = document.getElementById('role').value.trim();
   if (!hwid || !username || !expiry || !role) return;
   const line = `${hwid} ${username} ${expiry} ${role}`;
