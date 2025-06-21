@@ -82,7 +82,10 @@ async function saveEdit(button, index) {
 
   const hwid = cells[0].textContent.trim();
   const user = cells[1].textContent.trim();
-  const date = cells[2].textContent.trim();
+  let date = cells[2].textContent.trim();
+if (date.includes("-") && date.split("-")[0].length === 4) {
+  date = formatDate(date); // convert YYYY-MM-DD to DD-MM-YYYY
+}
   const role = cells[3].textContent.trim();
 
   const line = `${hwid} ${user} ${date} ${role}`;
