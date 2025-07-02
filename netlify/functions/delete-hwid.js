@@ -7,7 +7,7 @@ const FILE = 'hwid.txt';
 const BRANCH = 'main';
 
 exports.handler = async (event) => {
-  const { index } = JSON.parse(event.body);
+  const { hwid } = JSON.parse(event.body);
   const getURL = `https://api.github.com/repos/${REPO}/contents/${FILE}?ref=${BRANCH}`;
 
   try {
@@ -18,6 +18,13 @@ exports.handler = async (event) => {
     const sha = json.sha;
     const content = Buffer.from(json.content, 'base64').toString('utf8');
     const lines = content.trim().split('\n');
+
+    // Find line index by HWID (first part of each line)
+    const index = lines.findIndex(line => line.split(' ')[0] === hwid);
+    
+    if (index === -1) {
+      return { statusCode: 404, body: JSON.stringify({ error: 'HWID not found' }) };
+    }
 
     lines.splice(index, 1);
     const updated = lines.join('\n');
@@ -30,7 +37,7 @@ exports.handler = async (event) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message: `Delete line at index ${index}`,
+        message: `Delete HWID: ${hwid}`,
         content: encoded,
         sha,
         branch: BRANCH
