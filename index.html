@@ -277,71 +277,82 @@
       button.parentNode.insertBefore(cancelBtn, button.nextSibling);
     }
 
-    async function saveEdit(button, index) {
-      const row = button.closest('tr');
-      const cells = row.querySelectorAll('td[data-key]');
+    async function saveEdit(button, originalHwid) {
+    const row = button.closest('tr');
+    const cells = row.querySelectorAll('td[data-key]');
 
-      const hwid = cells[0].textContent.trim();
-      const user = cells[1].textContent.trim();
-      let date = cells[2].textContent.trim();
-      const role = cells[3].textContent.trim();
+    const hwid = cells[0].textContent.trim();
+    const user = cells[1].textContent.trim();
+    let date = cells[2].textContent.trim();
+    const role = cells[3].textContent.trim();
 
-      if (!hwid || !user || !date || !role) {
+    if (!hwid || !user || !date || !role) {
         showToast("All fields are required", true);
         return;
-      }
+    }
 
-      if (date.includes("-") && date.split("-")[0].length === 4) {
-        date = formatDateForStorage(date);
-      }
+    // Format date consistently
+    if (date.includes("-")) {
+        const parts = date.split("-");
+        if (parts[0].length === 4) { // YYYY-MM-DD format
+            date = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+    }
 
-      const line = `${hwid} ${user} ${date} ${role}`;
+    const line = `${hwid} ${user} ${date} ${role}`;
 
-      try {
+    try {
         document.getElementById('loading').classList.remove('hidden');
         const res = await fetch(api('edit-hwid'), {
-          method: "POST",
-          body: JSON.stringify({ index, line })
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ originalHwid, newLine: line })
         });
+        
         const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to save changes');
 
-        if (result.success) {
-          await fetchHWIDs();
-          showToast("Changes saved");
-        } else {
-          showToast("Failed to save changes", true);
-        }
-      } catch (error) {
-        showToast("Error saving changes", true);
-      } finally {
+        await fetchHWIDs();
+        showToast("Changes saved");
+    } catch (error) {
+        showToast(error.message, true);
+        console.error('Edit error:', error);
+    } finally {
         document.getElementById('loading').classList.add('hidden');
-      }
     }
+}
 
-    // Delete function
-    async function deleteLine(index) {
-      if (!confirm("Are you sure you want to delete this HWID?")) return;
-      
-      try {
+async function deleteLine(index) {
+    if (!confirm("Are you sure you want to delete this HWID?")) return;
+    
+    // Get the full line to ensure we have the exact HWID
+    const line = hwidList[index];
+    const hwid = line.split(' ')[0];
+    
+    try {
         document.getElementById('loading').classList.remove('hidden');
         const res = await fetch(api('delete-hwid'), {
-          method: "POST",
-          body: JSON.stringify({ index })
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ hwid })
         });
-        const result = await res.json();
         
-        if (result.success) {
-          await fetchHWIDs();
-          showToast("HWID deleted");
-        } else {
-          showToast("Failed to delete HWID", true);
-        }
-      } catch (error) {
-        showToast("Error deleting HWID", true);
-      } finally {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to delete HWID');
+
+        await fetchHWIDs();
+        showToast("HWID deleted");
+    } catch (error) {
+        showToast(error.message, true);
+        console.error('Delete error:', error);
+    } finally {
         document.getElementById('loading').classList.add('hidden');
-      }
     }
+}
 
     // Search function
     searchInput.addEventListener('input', () => {
