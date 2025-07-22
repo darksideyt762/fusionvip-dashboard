@@ -108,35 +108,3 @@ searchInput.addEventListener('input', () => {
   const filtered = hwidList.filter(line => line.toLowerCase().includes(keyword));
   renderTable(filtered);
 });
-// Add to your JS:
-function updateRoleFilter() {
-  const roles = [...new Set(hwidList.map(line => line.split(' ')[3]))];
-  const filter = document.getElementById('roleFilter');
-  filter.innerHTML = '<option value="all">All Roles</option>';
-  roles.forEach(role => {
-    filter.innerHTML += `<option value="${role}">${role}</option>`;
-  });
-}
-
-function applyFilters() {
-  const status = document.getElementById('statusFilter').value;
-  const role = document.getElementById('roleFilter').value;
-  const search = searchInput.value.toLowerCase();
-
-  let filtered = hwidList.filter(line => {
-    const [hwid, user, date, lineRole] = line.split(' ');
-    const matchesSearch = line.toLowerCase().includes(search);
-    const matchesRole = role === 'all' || lineRole === role;
-    
-    if (status === 'all') return matchesSearch && matchesRole;
-    
-    const [dd, mm, yyyy] = date.split('-');
-    const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
-    const isActive = expiryDate >= new Date();
-    
-    return matchesSearch && matchesRole && 
-          ((status === 'active' && isActive) || (status === 'expired' && !isActive));
-  });
-
-  renderTable(filtered);
-}
