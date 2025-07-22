@@ -72,6 +72,28 @@
     <div class="divider"></div>
     <h1 class="text-3xl font-bold text-center">🔥 FusionVIP Dashboard</h1>
 
+    <!-- VIP Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Total VIPs</h3>
+          <div class="text-2xl font-bold" id="totalVips">0</div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Active VIPs</h3>
+          <div class="text-2xl font-bold text-green-400" id="activeVips">0</div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Expired VIPs</h3>
+          <div class="text-2xl font-bold text-red-400" id="expiredVips">0</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Add Form -->
     <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
@@ -179,11 +201,37 @@
         hwidList = data.lines || [];
         currentDisplayedList = [...hwidList];
         renderTable(hwidList);
+        updateVIPStats();
       } catch (error) {
         showToast("Failed to load HWIDs", true);
       } finally {
         document.getElementById('loading').classList.add('hidden');
       }
+    }
+
+    function updateVIPStats() {
+      const total = hwidList.length;
+      let active = 0;
+      let expired = 0;
+
+      hwidList.forEach(line => {
+        const parts = line.split(' ');
+        if (parts.length >= 3) {
+          const dateStr = parts[2];
+          const [dd, mm, yyyy] = dateStr.split('-');
+          const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
+          const today = new Date();
+          if (expiryDate < today) {
+            expired++;
+          } else {
+            active++;
+          }
+        }
+      });
+
+      document.getElementById('totalVips').textContent = total;
+      document.getElementById('activeVips').textContent = active;
+      document.getElementById('expiredVips').textContent = expired;
     }
 
     function renderTable(list) {
