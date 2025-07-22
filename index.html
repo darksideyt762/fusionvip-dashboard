@@ -409,6 +409,55 @@
       renderTable(filtered);
     });
 
+    <!-- Add this below the search bar -->
+<div class="flex flex-wrap gap-2 mb-4">
+  <select id="statusFilter" class="p-2 rounded bg-white/20">
+    <option value="all">All Statuses</option>
+    <option value="active">Active Only</option>
+    <option value="expired">Expired Only</option>
+  </select>
+  <select id="roleFilter" class="p-2 rounded bg-white/20">
+    <option value="all">All Roles</option>
+    <!-- Dynamically populated -->
+  </select>
+  <button onclick="resetFilters()" class="px-3 py-2 bg-gray-600 rounded">Reset</button>
+</div>
+
+<script>
+// Add to your JS:
+function updateRoleFilter() {
+  const roles = [...new Set(hwidList.map(line => line.split(' ')[3]))];
+  const filter = document.getElementById('roleFilter');
+  filter.innerHTML = '<option value="all">All Roles</option>';
+  roles.forEach(role => {
+    filter.innerHTML += `<option value="${role}">${role}</option>`;
+  });
+}
+
+function applyFilters() {
+  const status = document.getElementById('statusFilter').value;
+  const role = document.getElementById('roleFilter').value;
+  const search = searchInput.value.toLowerCase();
+
+  let filtered = hwidList.filter(line => {
+    const [hwid, user, date, lineRole] = line.split(' ');
+    const matchesSearch = line.toLowerCase().includes(search);
+    const matchesRole = role === 'all' || lineRole === role;
+    
+    if (status === 'all') return matchesSearch && matchesRole;
+    
+    const [dd, mm, yyyy] = date.split('-');
+    const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
+    const isActive = expiryDate >= new Date();
+    
+    return matchesSearch && matchesRole && 
+          ((status === 'active' && isActive) || (status === 'expired' && !isActive));
+  });
+
+  renderTable(filtered);
+}
+</script>
+  
     // Helper functions
     function isValidHWID(hwid) {
       return hwid.length > 10 && /^[a-zA-Z0-9-]+$/.test(hwid);
