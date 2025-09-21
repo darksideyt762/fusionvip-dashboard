@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const { Buffer } = require('buffer');
+const moment = require('moment');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const REPO = 'Immortal-hacker/FusionVIP-Other';
@@ -21,22 +22,26 @@ exports.handler = async () => {
       const expiryStr = parts[2];
       if (!expiryStr) return false;
 
+      // Parse the date (assuming format DD-MM-YYYY)
       const [day, month, year] = expiryStr.split('-');
-      const expiryDate = new Date(`${year}-${month}-${day}`);
-      const now = new Date();
-      const diff = (expiryDate - now) / (1000 * 60 * 60 * 24);
+      const expiryDate = moment(`${year}-${month}-${day}`, "YYYY-MM-DD");
+      const now = moment();
+      const diff = expiryDate.diff(now, 'days');
 
       return diff < 7 && diff >= 0;
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ expiringSoon: soon })
+      body: JSON.stringify({ 
+        expiringSoon: soon,
+        count: soon.length 
+      })
     };
-  } catch (err) {
+  } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
