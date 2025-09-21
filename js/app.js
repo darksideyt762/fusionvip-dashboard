@@ -103,6 +103,32 @@ if (date.includes("-") && date.split("-")[0].length === 4) {
   }
 }
 
+// Auto-cleanup functionality
+async function cleanupExpiredVips() {
+    const expiredHwids = getExpiredHwids();
+    for (const hwid of expiredHwids) {
+        await deleteHwid(hwid);
+    }
+    showNotification('success', 'Cleanup Complete', `Removed ${expiredHwids.length} expired VIPs`);
+}
+
+// Statistics calculation
+function updateStatistics() {
+    const stats = calculateVipStatistics(hwidList);
+    updateStatisticsDisplay(stats);
+}
+
+// Enhanced status detection
+function getVipStatus(expiryDate) {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffDays = (expiry - now) / (1000 * 60 * 60 * 24);
+    
+    if (diffDays < 0) return 'expired';
+    if (diffDays <= 7) return 'warning';
+    return 'active';
+}
+
 searchInput.addEventListener('input', () => {
   const keyword = searchInput.value.toLowerCase();
   const filtered = hwidList.filter(line => line.toLowerCase().includes(keyword));
