@@ -19,7 +19,8 @@
                         'fade-in': 'fadeIn 0.6s ease-out',
                         'slide-up': 'slideUp 0.8s ease-out',
                         'pulse-glow': 'pulseGlow 2s infinite',
-                        'float': 'float 6s ease-in-out infinite'
+                        'float': 'float 6s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s infinite'
                     }
                 }
             }
@@ -41,6 +42,15 @@
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
         
         .glass-effect {
@@ -89,9 +99,29 @@
             left: 100%;
         }
         
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
         .dark .glass-effect {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .shimmer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2s infinite;
         }
     </style>
 </head>
@@ -120,7 +150,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
                 </div>
-                <h2 class="text-2xl font-bold mb-2">🔐 Access Control</h2>
+                <h1 class="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">FusionVIP</h1>
+                <h2 class="text-xl font-semibold mb-2">🔐 Access Control</h2>
                 <p class="text-gray-300">Enter credentials to continue</p>
             </div>
             <input type="password" id="password" placeholder="Enter password" 
@@ -135,7 +166,7 @@
     <!-- Main Dashboard -->
     <div id="dashboard" class="hidden max-w-7xl mx-auto p-4 space-y-6">
         <!-- Header with Advanced Controls -->
-        <header class="sticky top-0 z-10 glass-effect rounded-2xl p-6 mb-6 animate-slide-up">
+        <header class="sticky top-0 z-10 glass-effect rounded-2xl p-6 mb-6 animate-slide-up shimmer">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -263,6 +294,7 @@
                         <option value="VIP">VIP</option>
                         <option value="Premium">Premium</option>
                         <option value="Admin">Admin</option>
+                        <option value="Moderator">Moderator</option>
                     </select>
                 </div>
                 <div class="md:col-span-2 xl:col-span-4">
@@ -325,9 +357,34 @@
         </div>
     </div>
 
+    <!-- Keep original authentication script -->
     <script>
-        // Enhanced JavaScript with Modern Features
-        let vipData = JSON.parse(localStorage.getItem('vipData')) || [];
+        const PASSWORD = "fusionvip123"; // Your hardcoded password
+
+        function checkPassword() {
+            const input = document.getElementById("passwordInput").value;
+            if (input === PASSWORD) {
+                sessionStorage.setItem("loggedIn", "true");
+                document.getElementById("auth").classList.add("hidden");
+                document.getElementById("dashboard").classList.remove("hidden");
+                window.onload(); // Load dashboard data
+            } else {
+                alert("❌ Incorrect password");
+            }
+        }
+
+        if (sessionStorage.getItem("loggedIn")) {
+            document.getElementById("auth").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
+        }
+    </script>
+
+    <!-- Main Enhanced JavaScript with Netlify Functions Integration -->
+    <script>
+        // Enhanced JavaScript with Modern Features + Netlify Functions Integration
+        const api = path => `/.netlify/functions/${path}`;
+        let vipData = [];
+        let hwidList = [];
         let autoCleanupEnabled = false;
         let cleanupInterval;
 
@@ -349,14 +406,14 @@
         // Enhanced login with animations
         function login() {
             const password = document.getElementById('password').value;
-            const correctPassword = 'fusionvip123'; // Change this to your desired password
             
-            if (password === correctPassword) {
+            if (password === PASSWORD) {
                 showLoading();
                 setTimeout(() => {
                     hideLoading();
                     document.getElementById('auth').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
+                    sessionStorage.setItem("loggedIn", "true");
                     initDashboard();
                 }, 1500);
             } else {
@@ -368,56 +425,182 @@
             }
         }
 
+        // Convert original HWID format to new format
+        function convertHWIDData(originalData) {
+            return originalData.map(line => {
+                const parts = line.split(' ');
+                if (parts.length >= 3) {
+                    const [hwid, username, dateStr, ...roleParts] = parts;
+                    const role = roleParts.join(' ') || 'VIP';
+                    
+                    // Convert DD-MM-YYYY to YYYY-MM-DD for consistency
+                    const [dd, mm, yyyy] = dateStr.split('-');
+                    const expiry = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+                    
+                    return { 
+                        hwid, 
+                        username, 
+                        expiry, 
+                        role, 
+                        createdAt: new Date().toISOString() 
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        // Enhanced data fetching with your existing API
+        async function fetchHWIDs() {
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                const res = await fetch(api('read-hwid'));
+                const data = await res.json();
+                
+                hwidList = data.lines || [];
+                vipData = convertHWIDData(hwidList);
+                
+                updateStats();
+                renderTable();
+                updateCharts();
+                
+                showNotification(`✅ Loaded ${vipData.length} VIP users`, 'success');
+            } catch (error) {
+                showNotification("❌ Failed to load VIP data", 'error');
+                console.error('Fetch error:', error);
+                
+                // Fallback to localStorage if API fails
+                const cachedData = localStorage.getItem('vipData');
+                if (cachedData) {
+                    vipData = JSON.parse(cachedData);
+                    updateStats();
+                    renderTable();
+                    updateCharts();
+                    showNotification("📋 Loaded cached data", 'info');
+                }
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Enhanced add user function with API integration
+        async function addUser(hwid, username, expiry, role) {
+            try {
+                showLoading();
+                
+                // Convert YYYY-MM-DD back to DD-MM-YYYY for API
+                const [yyyy, mm, dd] = expiry.split('-');
+                const apiDate = `${dd}-${mm}-${yyyy}`;
+                
+                const newEntry = `${hwid} ${username} ${apiDate} ${role}`;
+                
+                const response = await fetch(api('write-hwid'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'add',
+                        data: newEntry 
+                    })
+                });
+                
+                if (response.ok) {
+                    // Refresh data from server
+                    await fetchHWIDs();
+                    showNotification('✅ VIP user added successfully!', 'success');
+                    return true;
+                } else {
+                    throw new Error('API request failed');
+                }
+            } catch (error) {
+                console.error('Add user error:', error);
+                showNotification('❌ Failed to add user', 'error');
+                return false;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Enhanced delete user function
+        async function deleteUser(index) {
+            if (!confirm('Are you sure you want to delete this VIP user?')) return;
+            
+            try {
+                showLoading();
+                const user = vipData[index];
+                
+                const response = await fetch(api('write-hwid'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'delete',
+                        hwid: user.hwid 
+                    })
+                });
+                
+                if (response.ok) {
+                    await fetchHWIDs();
+                    showNotification(`🗑️ Deleted user: ${user.username}`, 'info');
+                } else {
+                    throw new Error('Delete request failed');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showNotification('❌ Failed to delete user', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Auto cleanup function with API integration
+        async function autoDeleteExpired() {
+            const today = new Date().toISOString().split('T')[0];
+            const expiredUsers = vipData.filter(user => user.expiry < today);
+            
+            if (expiredUsers.length === 0) return;
+            
+            try {
+                for (const user of expiredUsers) {
+                    await fetch(api('write-hwid'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'delete',
+                            hwid: user.hwid 
+                        })
+                    });
+                }
+                
+                await fetchHWIDs();
+                showNotification(`🗑️ Auto-deleted ${expiredUsers.length} expired VIP(s)`, 'info');
+            } catch (error) {
+                console.error('Auto cleanup error:', error);
+                showNotification('❌ Auto cleanup failed', 'error');
+            }
+        }
+
         // Initialize dashboard with enhanced features
         function initDashboard() {
-            updateStats();
-            renderTable();
+            fetchHWIDs(); // Load data from API
             initCharts();
             setupEventListeners();
             setupAutoCleanup();
             initDarkMode();
+            resetInactivityTimer();
         }
 
-        // Enhanced auto cleanup system
-        function setupAutoCleanup() {
-            if (autoCleanupEnabled) {
-                cleanupInterval = setInterval(autoDeleteExpired, 60000); // Check every minute
-            }
+        // Session management (from your original code)
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('loggedIn');
+                showNotification("Session expired. Please login again.", 'warning');
+                location.reload();
+            }, 30 * 60 * 1000); // 30 minutes
         }
 
-        function toggleAutoCleanup() {
-            autoCleanupEnabled = !autoCleanupEnabled;
-            const statusElement = document.getElementById('cleanupStatus');
-            
-            if (autoCleanupEnabled) {
-                statusElement.textContent = '🔄 Auto-Clean: ON';
-                statusElement.parentElement.classList.remove('from-green-600', 'to-emerald-600');
-                statusElement.parentElement.classList.add('from-red-600', 'to-pink-600');
-                setupAutoCleanup();
-                showNotification('✅ Auto cleanup enabled!', 'success');
-            } else {
-                statusElement.textContent = '🔄 Auto-Clean: OFF';
-                statusElement.parentElement.classList.remove('from-red-600', 'to-pink-600');
-                statusElement.parentElement.classList.add('from-green-600', 'to-emerald-600');
-                clearInterval(cleanupInterval);
-                showNotification('⏸️ Auto cleanup disabled!', 'info');
-            }
-        }
-
-        function autoDeleteExpired() {
-            const today = new Date().toISOString().split('T')[0];
-            const initialCount = vipData.length;
-            
-            vipData = vipData.filter(user => user.expiry >= today);
-            
-            const deletedCount = initialCount - vipData.length;
-            if (deletedCount > 0) {
-                localStorage.setItem('vipData', JSON.stringify(vipData));
-                updateStats();
-                renderTable();
-                showNotification(`🗑️ Auto-deleted ${deletedCount} expired VIP(s)`, 'info');
-            }
-        }
+        ['mousemove', 'keypress', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
 
         // Enhanced statistics with trend analysis
         function updateStats() {
@@ -428,6 +611,9 @@
             const activeVips = vipData.filter(user => user.expiry >= today).length;
             const expiredVips = vipData.filter(user => user.expiry < today).length;
             const expiringSoon = vipData.filter(user => user.expiry >= today && user.expiry <= nextWeek).length;
+            
+            // Cache data locally as backup
+            localStorage.setItem('vipData', JSON.stringify(vipData));
             
             // Animate number changes
             animateNumber('totalVips', totalVips);
@@ -465,6 +651,7 @@
             );
             
             tableBody.innerHTML = filteredData.map((user, index) => {
+                const originalIndex = vipData.findIndex(u => u.hwid === user.hwid);
                 const isExpired = new Date(user.expiry) < new Date();
                 const isExpiringSoon = !isExpired && new Date(user.expiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                 
@@ -485,7 +672,7 @@
                 return `
                     <tr class="hover:bg-white/5 transition-all duration-300 border-b border-white/10">
                         <td class="px-6 py-4">
-                            <input type="checkbox" class="row-select rounded" data-index="${index}">
+                            <input type="checkbox" class="row-select rounded" data-index="${originalIndex}">
                         </td>
                         <td class="px-6 py-4 font-mono text-sm">${user.hwid}</td>
                         <td class="px-6 py-4 font-semibold">${user.username}</td>
@@ -502,11 +689,11 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex gap-2">
-                                <button onclick="editUser(${index})" 
+                                <button onclick="editUser(${originalIndex})" 
                                         class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors duration-300">
                                     ✏️ Edit
                                 </button>
-                                <button onclick="deleteUser(${index})" 
+                                <button onclick="deleteUser(${originalIndex})" 
                                         class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs transition-colors duration-300">
                                     🗑️ Delete
                                 </button>
@@ -517,9 +704,9 @@
             }).join('');
         }
 
-        // Enhanced form handling with validation
+        // Enhanced form handling with API integration
         function setupEventListeners() {
-            document.getElementById('addForm').addEventListener('submit', function(e) {
+            document.getElementById('addForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const hwid = document.getElementById('hwid').value.trim();
@@ -538,14 +725,10 @@
                     return;
                 }
                 
-                const newUser = { hwid, username, expiry, role, createdAt: new Date().toISOString() };
-                vipData.push(newUser);
-                localStorage.setItem('vipData', JSON.stringify(vipData));
-                
-                updateStats();
-                renderTable();
-                this.reset();
-                showNotification('✅ VIP user added successfully!', 'success');
+                const success = await addUser(hwid, username, expiry, role);
+                if (success) {
+                    this.reset();
+                }
             });
             
             document.getElementById('search').addEventListener('input', renderTable);
@@ -561,7 +744,7 @@
             const active = vipData.filter(user => user.expiry >= today).length;
             const expired = vipData.filter(user => user.expiry < today).length;
             
-            new Chart(statusCtx, {
+            window.statusChart = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Active', 'Expired'],
@@ -580,9 +763,9 @@
                 }
             });
             
-            // Trends chart (mock data for demo)
+            // Trends chart
             const trendsCtx = document.getElementById('trendsChart').getContext('2d');
-            new Chart(trendsCtx, {
+            window.trendsChart = new Chart(trendsCtx, {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -606,6 +789,43 @@
                     }
                 }
             });
+        }
+
+        function updateCharts() {
+            if (window.statusChart && window.trendsChart) {
+                const today = new Date().toISOString().split('T')[0];
+                const active = vipData.filter(user => user.expiry >= today).length;
+                const expired = vipData.filter(user => user.expiry < today).length;
+                
+                window.statusChart.data.datasets[0].data = [active, expired];
+                window.statusChart.update();
+            }
+        }
+
+        // Auto cleanup setup
+        function setupAutoCleanup() {
+            if (autoCleanupEnabled) {
+                cleanupInterval = setInterval(autoDeleteExpired, 60000);
+            }
+        }
+
+        function toggleAutoCleanup() {
+            autoCleanupEnabled = !autoCleanupEnabled;
+            const statusElement = document.getElementById('cleanupStatus');
+            
+            if (autoCleanupEnabled) {
+                statusElement.textContent = '🔄 Auto-Clean: ON';
+                statusElement.parentElement.classList.remove('from-green-600', 'to-emerald-600');
+                statusElement.parentElement.classList.add('from-red-600', 'to-pink-600');
+                setupAutoCleanup();
+                showNotification('✅ Auto cleanup enabled!', 'success');
+            } else {
+                statusElement.textContent = '🔄 Auto-Clean: OFF';
+                statusElement.parentElement.classList.remove('from-red-600', 'to-pink-600');
+                statusElement.parentElement.classList.add('from-green-600', 'to-emerald-600');
+                clearInterval(cleanupInterval);
+                showNotification('⏸️ Auto cleanup disabled!', 'info');
+            }
         }
 
         // Utility functions
@@ -641,20 +861,7 @@
         }
 
         function editUser(index) {
-            const user = vipData[index];
-            // Implement edit functionality
             showNotification('Edit functionality - Coming soon!', 'info');
-        }
-
-        function deleteUser(index) {
-            if (confirm('Are you sure you want to delete this VIP user?')) {
-                const username = vipData[index].username;
-                vipData.splice(index, 1);
-                localStorage.setItem('vipData', JSON.stringify(vipData));
-                updateStats();
-                renderTable();
-                showNotification(`🗑️ Deleted user: ${username}`, 'info');
-            }
         }
 
         function toggleSelectAll() {
@@ -693,21 +900,25 @@
                 return;
             }
             
-            // Implement bulk actions
             showNotification(`Selected ${selectedRows.length} users. Bulk actions coming soon!`, 'info');
         }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Set minimum date to today for expiry input
             document.getElementById('expiry').min = new Date().toISOString().split('T')[0];
             
-            // Enable Enter key for login
             document.getElementById('password').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     login();
                 }
             });
+
+            // Auto-login if session exists
+            if (sessionStorage.getItem("loggedIn")) {
+                document.getElementById('auth').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                initDashboard();
+            }
         });
     </script>
 </body>
