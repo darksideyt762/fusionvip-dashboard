@@ -19,8 +19,7 @@
                         'fade-in': 'fadeIn 0.6s ease-out',
                         'slide-up': 'slideUp 0.8s ease-out',
                         'pulse-glow': 'pulseGlow 2s infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                        'shimmer': 'shimmer 2s infinite'
+                        'float': 'float 6s ease-in-out infinite'
                     }
                 }
             }
@@ -42,10 +41,6 @@
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
         }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -108,20 +103,15 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .shimmer {
-            position: relative;
-            overflow: hidden;
+        tr.editing {
+            background-color: rgba(255, 255, 0, 0.1) !important;
         }
         
-        .shimmer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: shimmer 2s infinite;
+        [contenteditable="true"] {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            outline: 2px solid #fbbf24;
         }
     </style>
 </head>
@@ -137,7 +127,7 @@
     <div id="loading" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center hidden z-50">
         <div class="text-center">
             <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-accent-400 mx-auto mb-4"></div>
-            <p class="text-lg font-semibold animate-pulse">Loading Dashboard...</p>
+            <p class="text-lg font-semibold animate-pulse">Processing...</p>
         </div>
     </div>
 
@@ -154,9 +144,9 @@
                 <h2 class="text-xl font-semibold mb-2">🔐 Access Control</h2>
                 <p class="text-gray-300">Enter credentials to continue</p>
             </div>
-            <input type="password" id="password" placeholder="Enter password" 
+            <input type="password" id="passwordInput" placeholder="Enter password" 
                    class="w-full p-4 rounded-lg glass-effect mb-4 focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
-            <button onclick="login()" 
+            <button onclick="checkPassword()" 
                     class="w-full p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300">
                 Access Dashboard
             </button>
@@ -166,7 +156,7 @@
     <!-- Main Dashboard -->
     <div id="dashboard" class="hidden max-w-7xl mx-auto p-4 space-y-6">
         <!-- Header with Advanced Controls -->
-        <header class="sticky top-0 z-10 glass-effect rounded-2xl p-6 mb-6 animate-slide-up shimmer">
+        <header class="sticky top-0 z-10 glass-effect rounded-2xl p-6 mb-6 animate-slide-up">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -276,26 +266,22 @@
                 <div>
                     <label class="block text-sm font-medium mb-2">HWID</label>
                     <input type="text" placeholder="Enter HWID" id="hwid" 
-                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">Username</label>
                     <input type="text" placeholder="Enter username" id="username" 
-                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">Expiry Date</label>
                     <input type="date" id="expiry" 
-                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">Role</label>
-                    <select id="role" class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
-                        <option value="VIP">VIP</option>
-                        <option value="Premium">Premium</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Moderator">Moderator</option>
-                    </select>
+                    <input type="text" placeholder="Enter role (e.g., VIP)" id="role" 
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300" value="VIP">
                 </div>
                 <div class="md:col-span-2 xl:col-span-4">
                     <button type="submit" 
@@ -315,9 +301,9 @@
                             class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300">
                         📊 Export
                     </button>
-                    <button onclick="bulkActions()" 
+                    <button onclick="cleanupExpired()" 
                             class="px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg font-semibold hover:from-orange-700 hover:to-red-700 transition-all duration-300">
-                        ⚡ Bulk Actions
+                        🗑️ Cleanup Expired
                     </button>
                 </div>
             </div>
@@ -336,7 +322,7 @@
                             <th class="px-6 py-4 font-semibold">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="vipTable" class="divide-y divide-white/10">
+                    <tbody id="hwidTable" class="divide-y divide-white/10">
                         <!-- Dynamic content will be inserted here -->
                     </tbody>
                 </table>
@@ -357,7 +343,7 @@
         </div>
     </div>
 
-    <!-- Keep original authentication script -->
+    <!-- Authentication Script -->
     <script>
         const PASSWORD = "fusionvip123"; // Your hardcoded password
 
@@ -367,26 +353,58 @@
                 sessionStorage.setItem("loggedIn", "true");
                 document.getElementById("auth").classList.add("hidden");
                 document.getElementById("dashboard").classList.remove("hidden");
-                window.onload(); // Load dashboard data
+                initDashboard(); // Initialize dashboard after login
             } else {
-                alert("❌ Incorrect password");
+                showToast("❌ Incorrect password", true);
+                document.getElementById("passwordInput").classList.add("shake");
+                setTimeout(() => {
+                    document.getElementById("passwordInput").classList.remove("shake");
+                }, 500);
             }
         }
 
+        // Auto-login if session exists
         if (sessionStorage.getItem("loggedIn")) {
             document.getElementById("auth").classList.add("hidden");
             document.getElementById("dashboard").classList.remove("hidden");
         }
     </script>
 
-    <!-- Main Enhanced JavaScript with Netlify Functions Integration -->
+    <!-- Main Enhanced JavaScript with Complete Functionality -->
     <script>
-        // Enhanced JavaScript with Modern Features + Netlify Functions Integration
+        // Configuration and Variables
         const api = path => `/.netlify/functions/${path}`;
-        let vipData = [];
+        const tableBody = document.getElementById('hwidTable');
+        const form = document.getElementById('addForm');
+        const searchInput = document.getElementById('search');
         let hwidList = [];
+        let currentDisplayedList = [];
+        let inactivityTimer;
         let autoCleanupEnabled = false;
         let cleanupInterval;
+
+        // Initialize Dashboard
+        async function initDashboard() {
+            await fetchHWIDs();
+            initCharts();
+            setupEventListeners();
+            resetInactivityTimer();
+            initDarkMode();
+        }
+
+        // Session management with inactivity timer
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('loggedIn');
+                showToast("Session expired. Please login again.", true);
+                location.reload();
+            }, 30 * 60 * 1000); // 30 minutes
+        }
+
+        ['mousemove', 'keypress', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
 
         // Dark mode functionality
         function initDarkMode() {
@@ -403,225 +421,79 @@
             });
         }
 
-        // Enhanced login with animations
-        function login() {
-            const password = document.getElementById('password').value;
-            
-            if (password === PASSWORD) {
-                showLoading();
-                setTimeout(() => {
-                    hideLoading();
-                    document.getElementById('auth').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                    sessionStorage.setItem("loggedIn", "true");
-                    initDashboard();
-                }, 1500);
-            } else {
-                showNotification('❌ Incorrect password!', 'error');
-                document.getElementById('password').classList.add('shake');
-                setTimeout(() => {
-                    document.getElementById('password').classList.remove('shake');
-                }, 500);
-            }
-        }
-
-        // Convert original HWID format to new format
-        function convertHWIDData(originalData) {
-            return originalData.map(line => {
-                const parts = line.split(' ');
-                if (parts.length >= 3) {
-                    const [hwid, username, dateStr, ...roleParts] = parts;
-                    const role = roleParts.join(' ') || 'VIP';
-                    
-                    // Convert DD-MM-YYYY to YYYY-MM-DD for consistency
-                    const [dd, mm, yyyy] = dateStr.split('-');
-                    const expiry = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
-                    
-                    return { 
-                        hwid, 
-                        username, 
-                        expiry, 
-                        role, 
-                        createdAt: new Date().toISOString() 
-                    };
-                }
-                return null;
-            }).filter(Boolean);
-        }
-
-        // Enhanced data fetching with your existing API
+        // Enhanced data fetching with error handling
         async function fetchHWIDs() {
             try {
                 document.getElementById('loading').classList.remove('hidden');
                 const res = await fetch(api('read-hwid'));
                 const data = await res.json();
-                
                 hwidList = data.lines || [];
-                vipData = convertHWIDData(hwidList);
-                
-                updateStats();
-                renderTable();
+                currentDisplayedList = [...hwidList];
+                renderTable(hwidList);
+                updateVIPStats();
                 updateCharts();
-                
-                showNotification(`✅ Loaded ${vipData.length} VIP users`, 'success');
+                showToast(`✅ Loaded ${hwidList.length} VIP users`, false);
             } catch (error) {
-                showNotification("❌ Failed to load VIP data", 'error');
                 console.error('Fetch error:', error);
-                
-                // Fallback to localStorage if API fails
-                const cachedData = localStorage.getItem('vipData');
-                if (cachedData) {
-                    vipData = JSON.parse(cachedData);
-                    updateStats();
-                    renderTable();
+                showToast("❌ Failed to load VIP data", true);
+                // Try to load from localStorage as backup
+                const cached = localStorage.getItem('hwidList');
+                if (cached) {
+                    hwidList = JSON.parse(cached);
+                    currentDisplayedList = [...hwidList];
+                    renderTable(hwidList);
+                    updateVIPStats();
                     updateCharts();
-                    showNotification("📋 Loaded cached data", 'info');
+                    showToast("📋 Loaded cached data", false);
                 }
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         }
 
-        // Enhanced add user function with API integration
-        async function addUser(hwid, username, expiry, role) {
-            try {
-                showLoading();
-                
-                // Convert YYYY-MM-DD back to DD-MM-YYYY for API
-                const [yyyy, mm, dd] = expiry.split('-');
-                const apiDate = `${dd}-${mm}-${yyyy}`;
-                
-                const newEntry = `${hwid} ${username} ${apiDate} ${role}`;
-                
-                const response = await fetch(api('write-hwid'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'add',
-                        data: newEntry 
-                    })
-                });
-                
-                if (response.ok) {
-                    // Refresh data from server
-                    await fetchHWIDs();
-                    showNotification('✅ VIP user added successfully!', 'success');
-                    return true;
-                } else {
-                    throw new Error('API request failed');
+        // Enhanced VIP statistics calculation
+        function updateVIPStats() {
+            const total = hwidList.length;
+            let active = 0;
+            let expired = 0;
+            let expiringSoon = 0;
+
+            const today = new Date();
+            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            hwidList.forEach(line => {
+                const parts = line.split(' ');
+                if (parts.length >= 3) {
+                    const dateStr = parts[2];
+                    if (dateStr && dateStr.includes('-')) {
+                        const [dd, mm, yyyy] = dateStr.split('-');
+                        if (dd && mm && yyyy) {
+                            const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                            
+                            if (expiryDate < today) {
+                                expired++;
+                            } else {
+                                active++;
+                                if (expiryDate <= nextWeek) {
+                                    expiringSoon++;
+                                }
+                            }
+                        }
+                    }
                 }
-            } catch (error) {
-                console.error('Add user error:', error);
-                showNotification('❌ Failed to add user', 'error');
-                return false;
-            } finally {
-                hideLoading();
-            }
-        }
+            });
 
-        // Enhanced delete user function
-        async function deleteUser(index) {
-            if (!confirm('Are you sure you want to delete this VIP user?')) return;
-            
-            try {
-                showLoading();
-                const user = vipData[index];
-                
-                const response = await fetch(api('write-hwid'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'delete',
-                        hwid: user.hwid 
-                    })
-                });
-                
-                if (response.ok) {
-                    await fetchHWIDs();
-                    showNotification(`🗑️ Deleted user: ${user.username}`, 'info');
-                } else {
-                    throw new Error('Delete request failed');
-                }
-            } catch (error) {
-                console.error('Delete error:', error);
-                showNotification('❌ Failed to delete user', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
+            // Save to localStorage
+            localStorage.setItem('hwidList', JSON.stringify(hwidList));
 
-        // Auto cleanup function with API integration
-        async function autoDeleteExpired() {
-            const today = new Date().toISOString().split('T')[0];
-            const expiredUsers = vipData.filter(user => user.expiry < today);
-            
-            if (expiredUsers.length === 0) return;
-            
-            try {
-                for (const user of expiredUsers) {
-                    await fetch(api('write-hwid'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            action: 'delete',
-                            hwid: user.hwid 
-                        })
-                    });
-                }
-                
-                await fetchHWIDs();
-                showNotification(`🗑️ Auto-deleted ${expiredUsers.length} expired VIP(s)`, 'info');
-            } catch (error) {
-                console.error('Auto cleanup error:', error);
-                showNotification('❌ Auto cleanup failed', 'error');
-            }
-        }
-
-        // Initialize dashboard with enhanced features
-        function initDashboard() {
-            fetchHWIDs(); // Load data from API
-            initCharts();
-            setupEventListeners();
-            setupAutoCleanup();
-            initDarkMode();
-            resetInactivityTimer();
-        }
-
-        // Session management (from your original code)
-        let inactivityTimer;
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                sessionStorage.removeItem('loggedIn');
-                showNotification("Session expired. Please login again.", 'warning');
-                location.reload();
-            }, 30 * 60 * 1000); // 30 minutes
-        }
-
-        ['mousemove', 'keypress', 'click'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer);
-        });
-
-        // Enhanced statistics with trend analysis
-        function updateStats() {
-            const today = new Date().toISOString().split('T')[0];
-            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            
-            const totalVips = vipData.length;
-            const activeVips = vipData.filter(user => user.expiry >= today).length;
-            const expiredVips = vipData.filter(user => user.expiry < today).length;
-            const expiringSoon = vipData.filter(user => user.expiry >= today && user.expiry <= nextWeek).length;
-            
-            // Cache data locally as backup
-            localStorage.setItem('vipData', JSON.stringify(vipData));
-            
-            // Animate number changes
-            animateNumber('totalVips', totalVips);
-            animateNumber('activeVips', activeVips);
-            animateNumber('expiredVips', expiredVips);
+            // Animate number updates
+            animateNumber('totalVips', total);
+            animateNumber('activeVips', active);
+            animateNumber('expiredVips', expired);
             animateNumber('expiringSoon', expiringSoon);
         }
 
+        // Number animation function
         function animateNumber(elementId, targetValue) {
             const element = document.getElementById(elementId);
             const currentValue = parseInt(element.textContent) || 0;
@@ -639,47 +511,70 @@
             }, 50);
         }
 
-        // Enhanced table rendering with status indicators
-        function renderTable() {
-            const tableBody = document.getElementById('vipTable');
-            const searchTerm = document.getElementById('search').value.toLowerCase();
+        // Enhanced table rendering with search functionality
+        function renderTable(dataList) {
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             
-            const filteredData = vipData.filter(user => 
-                user.hwid.toLowerCase().includes(searchTerm) ||
-                user.username.toLowerCase().includes(searchTerm) ||
-                user.role.toLowerCase().includes(searchTerm)
-            );
-            
-            tableBody.innerHTML = filteredData.map((user, index) => {
-                const originalIndex = vipData.findIndex(u => u.hwid === user.hwid);
-                const isExpired = new Date(user.expiry) < new Date();
-                const isExpiringSoon = !isExpired && new Date(user.expiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                
+            // Filter data based on search term
+            const filteredData = dataList.filter(line => {
+                return line.toLowerCase().includes(searchTerm);
+            });
+
+            currentDisplayedList = filteredData;
+
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                            ${searchTerm ? '🔍 No results found for your search' : '📝 No VIP users found'}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = filteredData.map((line, index) => {
+                const parts = line.split(' ');
+                const hwid = parts[0] || 'N/A';
+                const user = parts[1] || 'N/A';
+                const date = parts[2] || 'N/A';
+                const role = parts.slice(3).join(' ') || 'VIP';
+
+                // Calculate status
                 let statusClass = 'bg-green-500';
                 let statusText = 'Active';
                 let statusIcon = '✅';
-                
-                if (isExpired) {
-                    statusClass = 'bg-red-500';
-                    statusText = 'Expired';
-                    statusIcon = '❌';
-                } else if (isExpiringSoon) {
-                    statusClass = 'bg-yellow-500';
-                    statusText = 'Expiring Soon';
-                    statusIcon = '⚠️';
+
+                if (date && date.includes('-')) {
+                    const [dd, mm, yyyy] = date.split('-');
+                    if (dd && mm && yyyy) {
+                        const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                        const today = new Date();
+                        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                        if (expiryDate < today) {
+                            statusClass = 'bg-red-500';
+                            statusText = 'Expired';
+                            statusIcon = '❌';
+                        } else if (expiryDate <= nextWeek) {
+                            statusClass = 'bg-yellow-500';
+                            statusText = 'Expiring Soon';
+                            statusIcon = '⚠️';
+                        }
+                    }
                 }
-                
+
                 return `
-                    <tr class="hover:bg-white/5 transition-all duration-300 border-b border-white/10">
+                    <tr class="hover:bg-white/5 transition-all duration-300 border-b border-white/10" data-index="${hwidList.indexOf(line)}">
                         <td class="px-6 py-4">
-                            <input type="checkbox" class="row-select rounded" data-index="${originalIndex}">
+                            <input type="checkbox" class="row-select rounded" data-hwid="${hwid}">
                         </td>
-                        <td class="px-6 py-4 font-mono text-sm">${user.hwid}</td>
-                        <td class="px-6 py-4 font-semibold">${user.username}</td>
-                        <td class="px-6 py-4">${formatDate(user.expiry)}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 font-mono text-sm" contenteditable="true" data-key="hwid" data-original="${hwid}">${hwid}</td>
+                        <td class="px-6 py-4 font-semibold" contenteditable="true" data-key="user" data-original="${user}">${user}</td>
+                        <td class="px-6 py-4" contenteditable="true" data-key="date" data-original="${date}">${date}</td>
+                        <td class="px-6 py-4" contenteditable="true" data-key="role" data-original="${role}">
                             <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">
-                                ${user.role}
+                                ${role}
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -689,11 +584,11 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex gap-2">
-                                <button onclick="editUser(${originalIndex})" 
+                                <button onclick="editRow(this)" 
                                         class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors duration-300">
                                     ✏️ Edit
                                 </button>
-                                <button onclick="deleteUser(${originalIndex})" 
+                                <button onclick="deleteRow('${hwid}')" 
                                         class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs transition-colors duration-300">
                                     🗑️ Delete
                                 </button>
@@ -702,184 +597,415 @@
                     </tr>
                 `;
             }).join('');
+
+            // Add event listeners for inline editing
+            setupInlineEditing();
         }
 
-        // Enhanced form handling with API integration
+        // Setup inline editing functionality
+        function setupInlineEditing() {
+            const editableCells = document.querySelectorAll('[contenteditable="true"]');
+            
+            editableCells.forEach(cell => {
+                cell.addEventListener('focus', function() {
+                    this.closest('tr').classList.add('editing');
+                    if (this.dataset.key === 'role') {
+                        // For role cells, edit the text content directly
+                        const span = this.querySelector('span');
+                        if (span) {
+                            this.textContent = span.textContent;
+                        }
+                    }
+                });
+
+                cell.addEventListener('blur', function() {
+                    this.closest('tr').classList.remove('editing');
+                    if (this.dataset.key === 'role') {
+                        // Restore span formatting for role
+                        const value = this.textContent.trim();
+                        this.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">${value}</span>`;
+                    }
+                });
+
+                cell.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.blur();
+                        saveInlineEdit(this);
+                    }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        // Restore original value
+                        if (this.dataset.key === 'role') {
+                            const originalValue = this.dataset.original;
+                            this.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">${originalValue}</span>`;
+                        } else {
+                            this.textContent = this.dataset.original;
+                        }
+                        this.blur();
+                    }
+                });
+            });
+        }
+
+        // Save inline edits
+        async function saveInlineEdit(cell) {
+            const row = cell.closest('tr');
+            const originalIndex = parseInt(row.dataset.index);
+            const originalLine = hwidList[originalIndex];
+            
+            if (!originalLine) return;
+
+            const parts = originalLine.split(' ');
+            const newValue = cell.dataset.key === 'role' ? 
+                cell.querySelector('span')?.textContent || cell.textContent.trim() : 
+                cell.textContent.trim();
+
+            // Update the appropriate part
+            switch(cell.dataset.key) {
+                case 'hwid':
+                    parts[0] = newValue;
+                    break;
+                case 'user':
+                    parts[1] = newValue;
+                    break;
+                case 'date':
+                    parts[2] = newValue;
+                    break;
+                case 'role':
+                    parts[3] = newValue;
+                    break;
+            }
+
+            const newLine = parts.join(' ');
+            
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                
+                // Update via API
+                const response = await fetch(api('write-hwid'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update',
+                        oldData: originalLine,
+                        newData: newLine
+                    })
+                });
+
+                if (response.ok) {
+                    // Update local data
+                    hwidList[originalIndex] = newLine;
+                    cell.dataset.original = newValue;
+                    await fetchHWIDs(); // Refresh to ensure consistency
+                    showToast('✅ Updated successfully!', false);
+                } else {
+                    throw new Error('Update failed');
+                }
+            } catch (error) {
+                console.error('Update error:', error);
+                showToast('❌ Update failed', true);
+                // Restore original value
+                if (cell.dataset.key === 'role') {
+                    const originalValue = cell.dataset.original;
+                    cell.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">${originalValue}</span>`;
+                } else {
+                    cell.textContent = cell.dataset.original;
+                }
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Edit row function
+        function editRow(button) {
+            const row = button.closest('tr');
+            const editableCells = row.querySelectorAll('[contenteditable="true"]');
+            
+            if (button.textContent.includes('Edit')) {
+                // Enter edit mode
+                row.classList.add('editing');
+                editableCells[0].focus(); // Focus first editable cell
+                button.innerHTML = '💾 Save';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                // Save mode
+                button.innerHTML = '✏️ Edit';
+                button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                row.classList.remove('editing');
+                
+                // Save all changes in the row
+                editableCells.forEach(cell => {
+                    saveInlineEdit(cell);
+                });
+            }
+        }
+
+        // Enhanced delete functionality
+        async function deleteRow(hwid) {
+            if (!confirm(`Are you sure you want to delete HWID: ${hwid}?`)) return;
+
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                
+                const response = await fetch(api('write-hwid'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete',
+                        hwid: hwid
+                    })
+                });
+
+                if (response.ok) {
+                    await fetchHWIDs(); // Refresh data
+                    showToast(`🗑️ Deleted HWID: ${hwid}`, false);
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('❌ Delete failed', true);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Enhanced form submission
+        async function handleFormSubmission(e) {
+            e.preventDefault();
+            
+            const hwid = document.getElementById('hwid').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const expiry = document.getElementById('expiry').value;
+            const role = document.getElementById('role').value.trim() || 'VIP';
+
+            // Validation
+            if (!hwid || !username || !expiry) {
+                showToast('❌ Please fill all required fields!', true);
+                return;
+            }
+
+            // Check for duplicate HWID
+            const existingHwid = hwidList.find(line => line.startsWith(hwid + ' '));
+            if (existingHwid) {
+                showToast('❌ HWID already exists!', true);
+                return;
+            }
+
+            // Convert date format from YYYY-MM-DD to DD-MM-YYYY
+            const [yyyy, mm, dd] = expiry.split('-');
+            const formattedDate = `${dd}-${mm}-${yyyy}`;
+            
+            const newEntry = `${hwid} ${username} ${formattedDate} ${role}`;
+
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                
+                const response = await fetch(api('write-hwid'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add',
+                        data: newEntry
+                    })
+                });
+
+                if (response.ok) {
+                    await fetchHWIDs(); // Refresh data
+                    form.reset();
+                    showToast('✅ VIP user added successfully!', false);
+                } else {
+                    throw new Error('Add operation failed');
+                }
+            } catch (error) {
+                console.error('Add error:', error);
+                showToast('❌ Failed to add VIP user', true);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Setup all event listeners
         function setupEventListeners() {
-            document.getElementById('addForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const hwid = document.getElementById('hwid').value.trim();
-                const username = document.getElementById('username').value.trim();
-                const expiry = document.getElementById('expiry').value;
-                const role = document.getElementById('role').value;
-                
-                // Enhanced validation
-                if (!hwid || !username || !expiry) {
-                    showNotification('❌ Please fill all required fields!', 'error');
-                    return;
-                }
-                
-                if (vipData.some(user => user.hwid === hwid)) {
-                    showNotification('❌ HWID already exists!', 'error');
-                    return;
-                }
-                
-                const success = await addUser(hwid, username, expiry, role);
-                if (success) {
-                    this.reset();
-                }
-            });
-            
-            document.getElementById('search').addEventListener('input', renderTable);
-            document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
-        }
+            // Form submission
+            if (form) {
+                form.addEventListener('submit', handleFormSubmission);
+            }
 
-        // Charts initialization with Chart.js
-        function initCharts() {
-            // Status distribution chart
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-            const today = new Date().toISOString().split('T')[0];
-            
-            const active = vipData.filter(user => user.expiry >= today).length;
-            const expired = vipData.filter(user => user.expiry < today).length;
-            
-            window.statusChart = new Chart(statusCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Active', 'Expired'],
-                    datasets: [{
-                        data: [active, expired],
-                        backgroundColor: ['#10B981', '#EF4444'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: { display: true, text: 'VIP Status Distribution', color: '#fff' },
-                        legend: { labels: { color: '#fff' } }
-                    }
-                }
-            });
-            
-            // Trends chart
-            const trendsCtx = document.getElementById('trendsChart').getContext('2d');
-            window.trendsChart = new Chart(trendsCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'New VIPs',
-                        data: [12, 19, 15, 25, 22, 18],
-                        borderColor: '#8B5CF6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: { display: true, text: 'VIP Registration Trends', color: '#fff' },
-                        legend: { labels: { color: '#fff' } }
-                    },
-                    scales: {
-                        y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                    }
-                }
-            });
-        }
+            // Search functionality
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    renderTable(hwidList);
+                });
+            }
 
-        function updateCharts() {
-            if (window.statusChart && window.trendsChart) {
-                const today = new Date().toISOString().split('T')[0];
-                const active = vipData.filter(user => user.expiry >= today).length;
-                const expired = vipData.filter(user => user.expiry < today).length;
-                
-                window.statusChart.data.datasets[0].data = [active, expired];
-                window.statusChart.update();
+            // Select all functionality
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const rowCheckboxes = document.querySelectorAll('.row-select');
+                    rowCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                });
+            }
+
+            // Set minimum date to today
+            const expiryInput = document.getElementById('expiry');
+            if (expiryInput) {
+                expiryInput.min = new Date().toISOString().split('T')[0];
+            }
+
+            // Enter key for password
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        checkPassword();
+                    }
+                });
             }
         }
 
-        // Auto cleanup setup
-        function setupAutoCleanup() {
-            if (autoCleanupEnabled) {
-                cleanupInterval = setInterval(autoDeleteExpired, 60000);
-            }
-        }
-
+        // Auto cleanup functionality
         function toggleAutoCleanup() {
             autoCleanupEnabled = !autoCleanupEnabled;
             const statusElement = document.getElementById('cleanupStatus');
+            const button = document.getElementById('autoCleanup');
             
             if (autoCleanupEnabled) {
                 statusElement.textContent = '🔄 Auto-Clean: ON';
-                statusElement.parentElement.classList.remove('from-green-600', 'to-emerald-600');
-                statusElement.parentElement.classList.add('from-red-600', 'to-pink-600');
-                setupAutoCleanup();
-                showNotification('✅ Auto cleanup enabled!', 'success');
+                button.classList.remove('from-green-600', 'to-emerald-600');
+                button.classList.add('from-red-600', 'to-pink-600');
+                
+                // Start cleanup interval (check every minute)
+                cleanupInterval = setInterval(autoCleanExpired, 60000);
+                showToast('✅ Auto cleanup enabled!', false);
             } else {
                 statusElement.textContent = '🔄 Auto-Clean: OFF';
-                statusElement.parentElement.classList.remove('from-red-600', 'to-pink-600');
-                statusElement.parentElement.classList.add('from-green-600', 'to-emerald-600');
+                button.classList.remove('from-red-600', 'to-pink-600');
+                button.classList.add('from-green-600', 'to-emerald-600');
+                
                 clearInterval(cleanupInterval);
-                showNotification('⏸️ Auto cleanup disabled!', 'info');
+                showToast('⏸️ Auto cleanup disabled!', false);
             }
         }
 
-        // Utility functions
-        function showLoading() {
-            document.getElementById('loading').classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.add('hidden');
-        }
-
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold animate-fade-in ${
-                type === 'success' ? 'bg-green-600' : 
-                type === 'error' ? 'bg-red-600' : 
-                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
+        // Auto cleanup expired entries
+        async function autoCleanExpired() {
+            const today = new Date();
+            const expiredEntries = hwidList.filter(line => {
+                const parts = line.split(' ');
+                if (parts.length >= 3) {
+                    const dateStr = parts[2];
+                    if (dateStr && dateStr.includes('-')) {
+                        const [dd, mm, yyyy] = dateStr.split('-');
+                        const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                        return expiryDate < today;
+                    }
+                }
+                return false;
             });
+
+            if (expiredEntries.length > 0) {
+                for (const entry of expiredEntries) {
+                    const hwid = entry.split(' ')[0];
+                    try {
+                        await fetch(api('write-hwid'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'delete',
+                                hwid: hwid
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Auto cleanup error:', error);
+                    }
+                }
+                
+                await fetchHWIDs();
+                showToast(`🗑️ Auto-deleted ${expiredEntries.length} expired entries`, false);
+            }
         }
 
-        function editUser(index) {
-            showNotification('Edit functionality - Coming soon!', 'info');
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const rowSelects = document.querySelectorAll('.row-select');
+        // Manual cleanup function
+        async function cleanupExpired() {
+            if (!confirm('Are you sure you want to delete all expired VIP users?')) return;
             
-            rowSelects.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
+            const today = new Date();
+            const expiredEntries = hwidList.filter(line => {
+                const parts = line.split(' ');
+                if (parts.length >= 3) {
+                    const dateStr = parts[2];
+                    if (dateStr && dateStr.includes('-')) {
+                        const [dd, mm, yyyy] = dateStr.split('-');
+                        const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                        return expiryDate < today;
+                    }
+                }
+                return false;
             });
+
+            if (expiredEntries.length === 0) {
+                showToast('ℹ️ No expired entries found', false);
+                return;
+            }
+
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                
+                for (const entry of expiredEntries) {
+                    const hwid = entry.split(' ')[0];
+                    await fetch(api('write-hwid'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'delete',
+                            hwid: hwid
+                        })
+                    });
+                }
+                
+                await fetchHWIDs();
+                showToast(`🗑️ Cleaned up ${expiredEntries.length} expired entries`, false);
+            } catch (error) {
+                console.error('Cleanup error:', error);
+                showToast('❌ Cleanup failed', true);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
         }
 
+        // Export data function
         function exportData() {
+            if (hwidList.length === 0) {
+                showToast('ℹ️ No data to export', false);
+                return;
+            }
+
             const csvContent = "data:text/csv;charset=utf-8," + 
                 "HWID,Username,Expiry Date,Role,Status\n" +
-                vipData.map(user => {
-                    const isExpired = new Date(user.expiry) < new Date();
-                    const status = isExpired ? 'Expired' : 'Active';
-                    return `${user.hwid},${user.username},${user.expiry},${user.role},${status}`;
+                hwidList.map(line => {
+                    const parts = line.split(' ');
+                    const hwid = parts[0] || '';
+                    const username = parts[1] || '';
+                    const date = parts[2] || '';
+                    const role = parts.slice(3).join(' ') || 'VIP';
+                    
+                    let status = 'Active';
+                    if (date && date.includes('-')) {
+                        const [dd, mm, yyyy] = date.split('-');
+                        const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                        if (expiryDate < new Date()) {
+                            status = 'Expired';
+                        }
+                    }
+                    
+                    return `"${hwid}","${username}","${date}","${role}","${status}"`;
                 }).join("\n");
             
             const encodedUri = encodeURI(csvContent);
@@ -890,36 +1016,146 @@
             link.click();
             document.body.removeChild(link);
             
-            showNotification('📊 Data exported successfully!', 'success');
+            showToast('📊 Data exported successfully!', false);
         }
 
-        function bulkActions() {
-            const selectedRows = document.querySelectorAll('.row-select:checked');
-            if (selectedRows.length === 0) {
-                showNotification('⚠️ Please select users first!', 'warning');
-                return;
+        // Enhanced toast notification system
+        function showToast(message, isError = false) {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.toast-notification');
+            existingToasts.forEach(toast => toast.remove());
+
+            const toast = document.createElement('div');
+            toast.className = `toast-notification fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold animate-fade-in ${
+                isError ? 'bg-red-600' : 'bg-green-600'
+            }`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Charts initialization
+        function initCharts() {
+            try {
+                // Status distribution chart
+                const statusCtx = document.getElementById('statusChart').getContext('2d');
+                
+                const today = new Date();
+                let active = 0, expired = 0;
+                
+                hwidList.forEach(line => {
+                    const parts = line.split(' ');
+                    if (parts.length >= 3) {
+                        const dateStr = parts[2];
+                        if (dateStr && dateStr.includes('-')) {
+                            const [dd, mm, yyyy] = dateStr.split('-');
+                            const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                            if (expiryDate < today) {
+                                expired++;
+                            } else {
+                                active++;
+                            }
+                        }
+                    }
+                });
+                
+                window.statusChart = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Active', 'Expired'],
+                        datasets: [{
+                            data: [active, expired],
+                            backgroundColor: ['#10B981', '#EF4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: { display: true, text: 'VIP Status Distribution', color: '#fff' },
+                            legend: { labels: { color: '#fff' } }
+                        }
+                    }
+                });
+                
+                // Trends chart (sample data)
+                const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+                window.trendsChart = new Chart(trendsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'New VIPs',
+                            data: [12, 19, 15, 25, 22, 18],
+                            borderColor: '#8B5CF6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: { display: true, text: 'VIP Registration Trends', color: '#fff' },
+                            legend: { labels: { color: '#fff' } }
+                        },
+                        scales: {
+                            y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Chart initialization error:', error);
             }
-            
-            showNotification(`Selected ${selectedRows.length} users. Bulk actions coming soon!`, 'info');
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('expiry').min = new Date().toISOString().split('T')[0];
-            
-            document.getElementById('password').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    login();
-                }
-            });
+        // Update charts when data changes
+        function updateCharts() {
+            if (window.statusChart) {
+                const today = new Date();
+                let active = 0, expired = 0;
+                
+                hwidList.forEach(line => {
+                    const parts = line.split(' ');
+                    if (parts.length >= 3) {
+                        const dateStr = parts[2];
+                        if (dateStr && dateStr.includes('-')) {
+                            const [dd, mm, yyyy] = dateStr.split('-');
+                            const expiryDate = new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+                            if (expiryDate < today) {
+                                expired++;
+                            } else {
+                                active++;
+                            }
+                        }
+                    }
+                });
+                
+                window.statusChart.data.datasets[0].data = [active, expired];
+                window.statusChart.update();
+            }
+        }
 
-            // Auto-login if session exists
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            
+            // Auto-login and initialize if session exists
             if (sessionStorage.getItem("loggedIn")) {
-                document.getElementById('auth').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
                 initDashboard();
             }
         });
+
+        // Initialize if already logged in
+        window.onload = async () => {
+            if (sessionStorage.getItem("loggedIn")) {
+                await initDashboard();
+            }
+        };
     </script>
 </body>
 </html>
