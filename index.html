@@ -3,304 +3,452 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VAW-ZEN Dashboard</title>
+  <title>FusionVIP Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
-    .vawzen-gradient {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    .vawzen-card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .vawzen-button {
-      background: linear-gradient(45deg, #667eea, #764ba2);
-      transition: all 0.3s ease;
-    }
-    .vawzen-button:hover {
-      background: linear-gradient(45deg, #5a67d8, #68306d);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    .divider {
+      height: 4px;
+      background: linear-gradient(to right, violet, black);
     }
     .fade-in {
       animation: fadeIn 1s ease-in-out;
-    }
-    .slide-in {
-      animation: slideIn 0.8s ease-out;
-    }
-    .pulse-glow {
-      animation: pulseGlow 2s infinite;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-30px); }
-      to { opacity: 1; transform: translateX(0); }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; transform: translateY(10px); }
+      10%, 90% { opacity: 1; transform: translateY(0); }
     }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
-      50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.6); }
+    tr {
+      transition: all 0.2s ease;
     }
-    .status-active {
-      background: linear-gradient(45deg, #10b981, #059669);
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.15) !important;
     }
-    .status-expired {
-      background: linear-gradient(45deg, #ef4444, #dc2626);
+    .editing {
+      outline: 2px solid yellow;
     }
-    .status-warning {
-      background: linear-gradient(45deg, #f59e0b, #d97706);
-    }
-    .table-header {
-      background: linear-gradient(90deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
-    }
-    .search-box {
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      transition: all 0.3s ease;
-    }
-    .search-box:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
-    }
-    .stats-card {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-      backdrop-filter: blur(15px);
-    }
-    .notification {
-      animation: slideInRight 0.5s ease-out;
-    }
-    @keyframes slideInRight {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    .banner-text {
-      background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
-      background-size: 200% 200%;
-      animation: gradientShift 3s ease infinite;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    @keyframes gradientShift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-    .auto-cleanup-indicator {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
+    [contenteditable="true"] {
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
     }
   </style>
 </head>
-<body class="min-h-screen vawzen-gradient text-white font-sans">
-  <!-- Auto Cleanup Indicator -->
-  <div id="autoCleanupIndicator" class="auto-cleanup-indicator hidden">
-    <div class="vawzen-card p-3 rounded-lg flex items-center space-x-2">
-      <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-      <span class="text-sm">Auto-cleanup active</span>
+<body class="bg-gradient-to-br from-violet-800 to-black min-h-screen p-4 text-white font-sans">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+  </div>
+
+  <!-- 🔐 Login Screen -->
+  <div id="auth" class="flex flex-col justify-center items-center min-h-screen">
+    <div class="bg-white/10 p-6 rounded-xl shadow-lg w-full max-w-sm fade-in">
+      <h2 class="text-xl font-bold mb-4 text-center">🔐 Enter Password</h2>
+      <input type="password" id="passwordInput" placeholder="Password" 
+             class="w-full p-2 rounded bg-white/20 placeholder-white mb-4" 
+             autocomplete="current-password" />
+      <button onclick="checkPassword()" 
+              class="w-full px-4 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 transition">
+        Login
+      </button>
     </div>
   </div>
 
-  <!-- Header with VAW-ZEN Banner -->
-  <header class="fade-in">
-    <div class="container mx-auto px-6 py-8">
-      <div class="text-center mb-8">
-        <h1 class="banner-text text-6xl font-bold mb-4 tracking-wider">VAW-ZEN</h1>
-        <p class="text-xl opacity-90">Advanced VIP Management Dashboard</p>
-        <div class="mt-4 h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-white to-transparent opacity-50"></div>
+  <!-- 💻 Dashboard -->
+  <div id="dashboard" class="hidden max-w-5xl mx-auto space-y-4 fade-in">
+    <div class="sticky top-0 z-10 bg-violet-800/90 backdrop-blur-sm py-3 px-2 flex gap-2">
+      <input type="text" id="search" placeholder="🔍 Search by username..." 
+             class="flex-1 p-2 rounded bg-white/20 placeholder-white"/>
+      <button onclick="exportToCSV()" 
+              class="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition">
+        Export CSV
+      </button>
+    </div>
+
+    <div class="divider"></div>
+    <h1 class="text-3xl font-bold text-center">🔥 FusionVIP Dashboard</h1>
+
+    <!-- VIP Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Total VIPs</h3>
+          <div class="text-2xl font-bold" id="totalVips">0</div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Active VIPs</h3>
+          <div class="text-2xl font-bold text-green-400" id="activeVips">0</div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-4 rounded-xl shadow-md">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Expired VIPs</h3>
+          <div class="text-2xl font-bold text-red-400" id="expiredVips">0</div>
+        </div>
       </div>
     </div>
-  </header>
 
-  <!-- Statistics Cards -->
-  <div class="container mx-auto px-6 mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 slide-in">
-      <div class="stats-card p-6 rounded-xl text-center">
-        <div class="text-3xl font-bold" id="totalVips">0</div>
-        <div class="text-sm opacity-80">Total VIPs</div>
-      </div>
-      <div class="stats-card p-6 rounded-xl text-center">
-        <div class="text-3xl font-bold text-green-400" id="activeVips">0</div>
-        <div class="text-sm opacity-80">Active VIPs</div>
-      </div>
-      <div class="stats-card p-6 rounded-xl text-center">
-        <div class="text-3xl font-bold text-yellow-400" id="expiringVips">0</div>
-        <div class="text-sm opacity-80">Expiring Soon</div>
-      </div>
-      <div class="stats-card p-6 rounded-xl text-center">
-        <div class="text-3xl font-bold text-red-400" id="expiredVips">0</div>
-        <div class="text-sm opacity-80">Expired</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Content -->
-  <div class="container mx-auto px-6 pb-8">
-    <div class="vawzen-card rounded-2xl p-8 fade-in">
-
-      <!-- Controls Section -->
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0">
-        <!-- Search Bar -->
-        <div class="relative flex-1 lg:mr-6">
-          <input
-            type="text"
-            id="search"
-            placeholder="Search by HWID, Username, or Role..."
-            class="search-box w-full px-4 py-3 rounded-xl text-white placeholder-gray-300 outline-none pl-12"
-          />
-          <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-300"></i>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex space-x-3">
-          <button
-            id="addBtn"
-            class="vawzen-button px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 pulse-glow"
-          >
-            <i data-lucide="plus" class="w-5 h-5"></i>
-            <span>Add VIP</span>
-          </button>
-          <button
-            id="refreshBtn"
-            class="vawzen-button px-6 py-3 rounded-xl font-semibold flex items-center space-x-2"
-          >
-            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-            <span>Refresh</span>
-          </button>
-          <button
-            id="cleanupBtn"
-            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 transition-all duration-300"
-          >
-            <i data-lucide="trash-2" class="w-5 h-5"></i>
-            <span>Cleanup Expired</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- VIP Table -->
-      <div class="overflow-x-auto rounded-xl">
-        <table class="w-full">
-          <thead>
-            <tr class="table-header">
-              <th class="px-6 py-4 text-left font-semibold">HWID</th>
-              <th class="px-6 py-4 text-left font-semibold">Username</th>
-              <th class="px-6 py-4 text-left font-semibold">Expiry Date</th>
-              <th class="px-6 py-4 text-left font-semibold">Role</th>
-              <th class="px-6 py-4 text-left font-semibold">Status</th>
-              <th class="px-6 py-4 text-center font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="hwidTable">
-            <!-- Dynamic content will be inserted here -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Empty State -->
-      <div id="emptyState" class="hidden text-center py-12">
-        <i data-lucide="database" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
-        <h3 class="text-xl font-semibold mb-2">No VIPs Found</h3>
-        <p class="opacity-70">Add your first VIP to get started</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add/Edit Modal -->
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="vawzen-card rounded-2xl p-8 w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
-      <div class="flex justify-between items-center mb-6">
-        <h2 id="modalTitle" class="text-2xl font-bold">Add New VIP</h2>
-        <button id="closeModal" class="text-gray-400 hover:text-white transition-colors">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
-      </div>
-
-      <form id="addForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-2">HWID</label>
-          <input
-            type="text"
-            id="hwidInput"
-            required
-            class="search-box w-full px-4 py-3 rounded-xl text-white outline-none"
-            placeholder="Enter HWID"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">Username</label>
-          <input
-            type="text"
-            id="userInput"
-            required
-            class="search-box w-full px-4 py-3 rounded-xl text-white outline-none"
-            placeholder="Enter username"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">Expiry Date</label>
-          <input
-            type="date"
-            id="dateInput"
-            required
-            class="search-box w-full px-4 py-3 rounded-xl text-white outline-none"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium mb-2">Role</label>
-          <select
-            id="roleInput"
-            required
-            class="search-box w-full px-4 py-3 rounded-xl text-white outline-none"
-          >
-            <option value="">Select Role</option>
-            <option value="VIP">VIP</option>
-            <option value="PREMIUM">PREMIUM</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-        </div>
-
-        <div class="flex space-x-3 pt-4">
-          <button
-            type="submit"
-            class="vawzen-button flex-1 py-3 rounded-xl font-semibold"
-          >
-            <span id="submitText">Add VIP</span>
-          </button>
-          <button
-            type="button"
-            id="cancelBtn"
-            class="bg-gray-600 hover:bg-gray-700 flex-1 py-3 rounded-xl font-semibold transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Notification Toast -->
-  <div id="notification" class="fixed top-6 right-6 z-50 hidden">
-    <div class="vawzen-card p-4 rounded-xl flex items-center space-x-3 notification max-w-sm">
-      <div id="notificationIcon"></div>
+    <!-- Add Form -->
+    <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
-        <div id="notificationTitle" class="font-semibold"></div>
-        <div id="notificationMessage" class="text-sm opacity-80"></div>
+        <label class="block text-sm mb-1">HWID</label>
+        <input type="text" placeholder="Enter HWID" id="hwid" 
+               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
       </div>
+      <div>
+        <label class="block text-sm mb-1">Username</label>
+        <input type="text" placeholder="Enter username" id="username" 
+               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Expiry Date</label>
+        <input type="date" id="expiry" 
+               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Role</label>
+        <input type="text" placeholder="Enter role" id="role" 
+               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
+      </div>
+      <button type="submit" 
+              class="md:col-span-4 px-4 py-2 bg-white text-black font-bold rounded hover:bg-yellow-300 transition">
+        Add HWID
+      </button>
+    </form>
+
+    <!-- HWID Table -->
+    <div class="overflow-auto max-h-[500px] rounded-lg border border-white/10">
+      <table class="w-full text-sm mt-2 text-left border-separate border-spacing-y-2">
+        <thead class="sticky top-0 z-10">
+          <tr class="text-white uppercase text-xs bg-white/10">
+            <th class="p-3">HWID</th>
+            <th class="p-3">Username</th>
+            <th class="p-3">Expiry</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="hwidTable" class=""></tbody>
+      </table>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- 🔒 Auth Logic -->
   <script>
-    // Initialize Lucide icons
-    lucide.createIcons();
+  const PASSWORD = "fusionvip123"; // Your hardcoded password
+
+  function checkPassword() {
+    const input = document.getElementById("passwordInput").value;
+    if (input === PASSWORD) {
+      sessionStorage.setItem("loggedIn", "true");
+      document.getElementById("auth").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+      window.onload(); // Load dashboard data
+    } else {
+      alert("❌ Incorrect password");
+    }
+  }
+
+  if (sessionStorage.getItem("loggedIn")) {
+    document.getElementById("auth").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+  }
+</script>
+
+  <!-- Main App Logic -->
+  <script>
+    const api = path => `/.netlify/functions/${path}`;
+    const tableBody = document.getElementById('hwidTable');
+    const form = document.getElementById('addForm');
+    const searchInput = document.getElementById('search');
+    let hwidList = [];
+    let currentDisplayedList = [];
+    let inactivityTimer;
+
+    // Initialize
+    window.onload = async () => {
+      if (sessionStorage.getItem("loggedIn")) {
+        await fetchHWIDs();
+      }
+    };
+
+    // Session management
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        sessionStorage.removeItem('loggedIn');
+        showToast("Session expired. Please login again.", true);
+        location.reload();
+      }, 30 * 60 * 1000); // 30 minutes
+    }
+
+    ['mousemove', 'keypress', 'click'].forEach(event => {
+      document.addEventListener(event, resetInactivityTimer);
+    });
+
+    // Data functions
+    async function fetchHWIDs() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch(api('read-hwid'));
+        const data = await res.json();
+        hwidList = data.lines || [];
+        currentDisplayedList = [...hwidList];
+        renderTable(hwidList);
+        updateVIPStats();
+      } catch (error) {
+        showToast("Failed to load HWIDs", true);
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    function updateVIPStats() {
+      const total = hwidList.length;
+      let active = 0;
+      let expired = 0;
+
+      hwidList.forEach(line => {
+        const parts = line.split(' ');
+        if (parts.length >= 3) {
+          const dateStr = parts[2];
+          const [dd, mm, yyyy] = dateStr.split('-');
+          const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
+          const today = new Date();
+          if (expiryDate < today) {
+            expired++;
+          } else {
+            active++;
+          }
+        }
+      });
+
+      document.getElementById('totalVips').textContent = total;
+      document.getElementById('activeVips').textContent = active;
+      document.getElementById('expiredVips').textContent = expired;
+    }
+
+    function renderTable(list) {
+      tableBody.innerHTML = '';
+      currentDisplayedList = list;
+      
+      list.forEach((line) => {
+        const [hwid, user, date, role] = line.split(' ');
+        const tr = document.createElement('tr');
+        tr.className = "bg-white/10 rounded hover:bg-white/15";
+        tr.innerHTML = `
+          <td class="p-3" data-key="hwid">${hwid}</td>
+          <td class="p-3" data-key="user">${user}</td>
+          <td class="p-3 ${getStatusColor(date)}" data-key="date">${date}</td>
+          <td class="p-3" data-key="role">${role}</td>
+          <td class="p-3 space-x-2">
+            <button onclick="enableEdit(this, '${hwid}')" class="px-2 py-1 bg-yellow-300 text-black text-xs rounded hover:bg-yellow-400">Edit</button>
+            <button onclick="deleteLine('${hwid}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">Delete</button>
+          </td>`;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function getStatusColor(dateStr) {
+      if (!dateStr) return '';
+      const [dd, mm, yyyy] = dateStr.split('-');
+      const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
+      const today = new Date();
+      return expiryDate < today ? 'text-red-400' : 'text-green-400';
+    }
+
+    // Form handling
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const hwid = document.getElementById('hwid').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const rawDate = document.getElementById('expiry').value;
+      const role = document.getElementById('role').value.trim();
+
+      if (!hwid || !username || !rawDate || !role) {
+        showToast("Please fill all fields", true);
+        return;
+      }
+
+      if (!isValidHWID(hwid)) {
+        showToast("Invalid HWID format", true);
+        return;
+      }
+
+      const expiry = formatDateForStorage(rawDate);
+      const line = `${hwid} ${username} ${expiry} ${role}`;
+
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch(api('write-hwid'), {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ line })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          await fetchHWIDs();
+          form.reset();
+          showToast("HWID added successfully");
+        } else {
+          showToast("Failed to add HWID", true);
+        }
+      } catch (error) {
+        showToast("Error adding HWID", true);
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    };
+
+    // Edit functions
+    function enableEdit(button, hwid) {
+      const row = button.closest('tr');
+      row.classList.add('editing');
+      
+      const cells = row.querySelectorAll('td[data-key]');
+      cells.forEach(cell => {
+        cell.setAttribute('contenteditable', 'true');
+        cell.classList.add('bg-white/20');
+      });
+
+      button.innerHTML = '💾 Save';
+      button.classList.replace('bg-yellow-300', 'bg-green-500');
+      button.onclick = () => saveEdit(button, hwid);
+      
+      // Add cancel button
+      const cancelBtn = document.createElement('button');
+      cancelBtn.innerHTML = '❌ Cancel';
+      cancelBtn.className = 'px-2 py-1 bg-gray-500 text-white text-xs rounded ml-2 hover:bg-gray-600';
+      cancelBtn.onclick = () => fetchHWIDs();
+      button.parentNode.insertBefore(cancelBtn, button.nextSibling);
+    }
+
+    async function saveEdit(button, originalHwid) {
+      const row = button.closest('tr');
+      const cells = row.querySelectorAll('td[data-key]');
+
+      const hwid = cells[0].textContent.trim();
+      const user = cells[1].textContent.trim();
+      let date = cells[2].textContent.trim();
+      const role = cells[3].textContent.trim();
+
+      if (!hwid || !user || !date || !role) {
+        showToast("All fields are required", true);
+        return;
+      }
+
+      if (date.includes("-") && date.split("-")[0].length === 4) {
+        date = formatDateForStorage(date);
+      }
+
+      const line = `${hwid} ${user} ${date} ${role}`;
+
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch(api('edit-hwid'), {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ originalHwid, newLine: line })
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to save changes');
+
+        await fetchHWIDs();
+        showToast("Changes saved");
+      } catch (error) {
+        showToast(error.message, true);
+        console.error('Edit error:', error);
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    // Delete function
+    async function deleteLine(hwid) {
+      if (!confirm("Are you sure you want to delete this HWID?")) return;
+      
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch(api('delete-hwid'), {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ hwid })
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to delete HWID');
+
+        await fetchHWIDs();
+        showToast("HWID deleted");
+      } catch (error) {
+        showToast(error.message, true);
+        console.error('Delete error:', error);
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    // Search function
+    searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value.toLowerCase();
+      const filtered = hwidList.filter(line => line.toLowerCase().includes(keyword));
+      renderTable(filtered);
+    });
+   
+    // Helper functions
+    function isValidHWID(hwid) {
+      return hwid.length > 10 && /^[a-zA-Z0-9-]+$/.test(hwid);
+    }
+
+    function formatDateForStorage(dateStr) {
+      const [yyyy, mm, dd] = dateStr.split('-');
+      return `${dd}-${mm}-${yyyy}`;
+    }
+
+    function exportToCSV() {
+      if (hwidList.length === 0) {
+        showToast("No data to export", true);
+        return;
+      }
+
+      const headers = ['HWID', 'Username', 'Expiry', 'Role'];
+      const csvContent = [
+        headers.join(','),
+        ...hwidList.map(line => line.replace(/ /g, ','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fusionvip-hwids-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      showToast("Export started");
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 right-4 p-4 rounded shadow-lg ${
+        isError ? 'bg-red-500' : 'bg-green-500'
+      } text-white animate-fadeInOut z-50`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
   </script>
 </body>
 </html>
