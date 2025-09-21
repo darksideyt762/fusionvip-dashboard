@@ -1,454 +1,714 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FusionVIP Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .divider {
-      height: 4px;
-      background: linear-gradient(to right, violet, black);
-    }
-    .fade-in {
-      animation: fadeIn 1s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeInOut {
-      0%, 100% { opacity: 0; transform: translateY(10px); }
-      10%, 90% { opacity: 1; transform: translateY(0); }
-    }
-    tr {
-      transition: all 0.2s ease;
-    }
-    tr:hover {
-      background-color: rgba(255, 255, 255, 0.15) !important;
-    }
-    .editing {
-      outline: 2px solid yellow;
-    }
-    [contenteditable="true"] {
-      background-color: rgba(255, 255, 255, 0.2);
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FusionVIP Dashboard v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#f8fafc', 900: '#0f172a' },
+                        accent: { 400: '#fbbf24', 600: '#d97706' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out',
+                        'slide-up': 'slideUp 0.8s ease-out',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 6s ease-in-out infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+        
+        .card-3d:hover {
+            transform: rotateY(5deg) rotateX(5deg);
+        }
+        
+        .gradient-border {
+            background: linear-gradient(45deg, #8b5cf6, #06b6d4, #10b981, #f59e0b);
+            border-radius: 12px;
+            padding: 2px;
+        }
+        
+        .gradient-border > div {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+        }
+        
+        .status-indicator {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-indicator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .status-indicator:hover::before {
+            left: 100%;
+        }
+        
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-violet-800 to-black min-h-screen p-4 text-white font-sans">
+<body class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white transition-all duration-300">
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" class="fixed top-4 right-4 z-50 p-3 rounded-full glass-effect hover:scale-110 transition-transform duration-300">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
 
-  <!-- Loading Overlay -->
-  <div id="loading" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
-  </div>
-
-  <!-- 🔐 Login Screen -->
-  <div id="auth" class="flex flex-col justify-center items-center min-h-screen">
-    <div class="bg-white/10 p-6 rounded-xl shadow-lg w-full max-w-sm fade-in">
-      <h2 class="text-xl font-bold mb-4 text-center">🔐 Enter Password</h2>
-      <input type="password" id="passwordInput" placeholder="Password" 
-             class="w-full p-2 rounded bg-white/20 placeholder-white mb-4" 
-             autocomplete="current-password" />
-      <button onclick="checkPassword()" 
-              class="w-full px-4 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-500 transition">
-        Login
-      </button>
-    </div>
-  </div>
-
-  <!-- 💻 Dashboard -->
-  <div id="dashboard" class="hidden max-w-5xl mx-auto space-y-4 fade-in">
-    <div class="sticky top-0 z-10 bg-violet-800/90 backdrop-blur-sm py-3 px-2 flex gap-2">
-      <input type="text" id="search" placeholder="🔍 Search by username..." 
-             class="flex-1 p-2 rounded bg-white/20 placeholder-white"/>
-      <button onclick="exportToCSV()" 
-              class="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition">
-        Export CSV
-      </button>
-    </div>
-
-    <div class="divider"></div>
-    <h1 class="text-3xl font-bold text-center">🔥 FusionVIP Dashboard</h1>
-
-    <!-- VIP Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white/10 p-4 rounded-xl shadow-md">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Total VIPs</h3>
-          <div class="text-2xl font-bold" id="totalVips">0</div>
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-accent-400 mx-auto mb-4"></div>
+            <p class="text-lg font-semibold animate-pulse">Loading Dashboard...</p>
         </div>
-      </div>
-      <div class="bg-white/10 p-4 rounded-xl shadow-md">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Active VIPs</h3>
-          <div class="text-2xl font-bold text-green-400" id="activeVips">0</div>
-        </div>
-      </div>
-      <div class="bg-white/10 p-4 rounded-xl shadow-md">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Expired VIPs</h3>
-          <div class="text-2xl font-bold text-red-400" id="expiredVips">0</div>
-        </div>
-      </div>
     </div>
 
-    <!-- Add Form -->
-    <form id="addForm" class="bg-white/10 p-4 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-sm mb-1">HWID</label>
-        <input type="text" placeholder="Enter HWID" id="hwid" 
-               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Username</label>
-        <input type="text" placeholder="Enter username" id="username" 
-               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Expiry Date</label>
-        <input type="date" id="expiry" 
-               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
-      </div>
-      <div>
-        <label class="block text-sm mb-1">Role</label>
-        <input type="text" placeholder="Enter role" id="role" 
-               class="w-full p-2 rounded bg-white/20 placeholder-white" required />
-      </div>
-      <button type="submit" 
-              class="md:col-span-4 px-4 py-2 bg-white text-black font-bold rounded hover:bg-yellow-300 transition">
-        Add HWID
-      </button>
-    </form>
-
-    <!-- HWID Table -->
-    <div class="overflow-auto max-h-[500px] rounded-lg border border-white/10">
-      <table class="w-full text-sm mt-2 text-left border-separate border-spacing-y-2">
-        <thead class="sticky top-0 z-10">
-          <tr class="text-white uppercase text-xs bg-white/10">
-            <th class="p-3">HWID</th>
-            <th class="p-3">Username</th>
-            <th class="p-3">Expiry</th>
-            <th class="p-3">Status</th>
-            <th class="p-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="hwidTable" class=""></tbody>
-      </table>
+    <!-- Login Screen -->
+    <div id="auth" class="flex flex-col justify-center items-center min-h-screen p-4">
+        <div class="glass-effect p-8 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center animate-float">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">🔐 Access Control</h2>
+                <p class="text-gray-300">Enter credentials to continue</p>
+            </div>
+            <input type="password" id="password" placeholder="Enter password" 
+                   class="w-full p-4 rounded-lg glass-effect mb-4 focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+            <button onclick="login()" 
+                    class="w-full p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300">
+                Access Dashboard
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- 🔒 Auth Logic -->
-  <script>
-  const PASSWORD = "fusionvip123"; // Your hardcoded password
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden max-w-7xl mx-auto p-4 space-y-6">
+        <!-- Header with Advanced Controls -->
+        <header class="sticky top-0 z-10 glass-effect rounded-2xl p-6 mb-6 animate-slide-up">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                        🔥 FusionVIP Dashboard v2.0
+                    </h1>
+                    <p class="text-gray-300 mt-1">Advanced VIP Management System</p>
+                </div>
+                <div class="flex gap-3">
+                    <div class="relative">
+                        <input type="text" id="search" placeholder="🔍 Smart Search..." 
+                               class="pl-10 pr-4 py-3 rounded-lg glass-effect w-64 focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                        <svg class="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <button id="autoCleanup" onclick="toggleAutoCleanup()" 
+                            class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300">
+                        <span id="cleanupStatus">🔄 Auto-Clean: OFF</span>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-  function checkPassword() {
-    const input = document.getElementById("passwordInput").value;
-    if (input === PASSWORD) {
-      sessionStorage.setItem("loggedIn", "true");
-      document.getElementById("auth").classList.add("hidden");
-      document.getElementById("dashboard").classList.remove("hidden");
-      window.onload(); // Load dashboard data
-    } else {
-      alert("❌ Incorrect password");
-    }
-  }
+        <!-- Enhanced Stats Cards with 3D Effects -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <!-- Total VIPs Card -->
+            <div class="gradient-border card-3d animate-fade-in" style="animation-delay: 0.1s">
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-300">Total VIPs</h3>
+                            <div class="text-3xl font-bold mt-2" id="totalVips">0</div>
+                        </div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-pulse-glow">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  if (sessionStorage.getItem("loggedIn")) {
-    document.getElementById("auth").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
-  }
-</script>
+            <!-- Active VIPs Card -->
+            <div class="gradient-border card-3d animate-fade-in" style="animation-delay: 0.2s">
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-300">Active VIPs</h3>
+                            <div class="text-3xl font-bold text-green-400 mt-2" id="activeVips">0</div>
+                        </div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- Main App Logic -->
-  <script>
-    const api = path => `/.netlify/functions/${path}`;
-    const tableBody = document.getElementById('hwidTable');
-    const form = document.getElementById('addForm');
-    const searchInput = document.getElementById('search');
-    let hwidList = [];
-    let currentDisplayedList = [];
-    let inactivityTimer;
+            <!-- Expired VIPs Card -->
+            <div class="gradient-border card-3d animate-fade-in" style="animation-delay: 0.3s">
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-300">Expired VIPs</h3>
+                            <div class="text-3xl font-bold text-red-400 mt-2" id="expiredVips">0</div>
+                        </div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    // Initialize
-    window.onload = async () => {
-      if (sessionStorage.getItem("loggedIn")) {
-        await fetchHWIDs();
-      }
-    };
+            <!-- Expiring Soon Card -->
+            <div class="gradient-border card-3d animate-fade-in" style="animation-delay: 0.4s">
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-300">Expiring Soon</h3>
+                            <div class="text-3xl font-bold text-yellow-400 mt-2" id="expiringSoon">0</div>
+                            <p class="text-sm text-gray-400 mt-1">Next 7 days</p>
+                        </div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    // Session management
-    function resetInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
-        sessionStorage.removeItem('loggedIn');
-        showToast("Session expired. Please login again.", true);
-        location.reload();
-      }, 30 * 60 * 1000); // 30 minutes
-    }
+        <!-- Advanced Add Form -->
+        <div class="glass-effect rounded-2xl p-6 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </span>
+                Add New VIP User
+            </h2>
+            <form id="addForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">HWID</label>
+                    <input type="text" placeholder="Enter HWID" id="hwid" 
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Username</label>
+                    <input type="text" placeholder="Enter username" id="username" 
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Expiry Date</label>
+                    <input type="date" id="expiry" 
+                           class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Role</label>
+                    <select id="role" class="w-full p-3 rounded-lg glass-effect focus:outline-none focus:ring-2 focus:ring-accent-400 transition-all duration-300">
+                        <option value="VIP">VIP</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 xl:col-span-4">
+                    <button type="submit" 
+                            class="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300">
+                        ✨ Add VIP User
+                    </button>
+                </div>
+            </form>
+        </div>
 
-    ['mousemove', 'keypress', 'click'].forEach(event => {
-      document.addEventListener(event, resetInactivityTimer);
-    });
+        <!-- Enhanced Data Table with Modern Design -->
+        <div class="glass-effect rounded-2xl p-6 animate-slide-up">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <h2 class="text-2xl font-bold">VIP Users Management</h2>
+                <div class="flex gap-3">
+                    <button onclick="exportData()" 
+                            class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300">
+                        📊 Export
+                    </button>
+                    <button onclick="bulkActions()" 
+                            class="px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg font-semibold hover:from-orange-700 hover:to-red-700 transition-all duration-300">
+                        ⚡ Bulk Actions
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                        <tr>
+                            <th class="px-6 py-4">
+                                <input type="checkbox" id="selectAll" class="rounded">
+                            </th>
+                            <th class="px-6 py-4 font-semibold">HWID</th>
+                            <th class="px-6 py-4 font-semibold">Username</th>
+                            <th class="px-6 py-4 font-semibold">Expiry Date</th>
+                            <th class="px-6 py-4 font-semibold">Role</th>
+                            <th class="px-6 py-4 font-semibold">Status</th>
+                            <th class="px-6 py-4 font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vipTable" class="divide-y divide-white/10">
+                        <!-- Dynamic content will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    // Data functions
-    async function fetchHWIDs() {
-      try {
-        document.getElementById('loading').classList.remove('hidden');
-        const res = await fetch(api('read-hwid'));
-        const data = await res.json();
-        hwidList = data.lines || [];
-        currentDisplayedList = [...hwidList];
-        renderTable(hwidList);
-        updateVIPStats();
-      } catch (error) {
-        showToast("Failed to load HWIDs", true);
-      } finally {
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }
+        <!-- Analytics Dashboard -->
+        <div class="glass-effect rounded-2xl p-6 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-6">📈 Analytics Overview</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-effect rounded-lg p-4">
+                    <canvas id="statusChart" width="400" height="300"></canvas>
+                </div>
+                <div class="glass-effect rounded-lg p-4">
+                    <canvas id="trendsChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function updateVIPStats() {
-      const total = hwidList.length;
-      let active = 0;
-      let expired = 0;
+    <script>
+        // Enhanced JavaScript with Modern Features
+        let vipData = JSON.parse(localStorage.getItem('vipData')) || [];
+        let autoCleanupEnabled = false;
+        let cleanupInterval;
 
-      hwidList.forEach(line => {
-        const parts = line.split(' ');
-        if (parts.length >= 3) {
-          const dateStr = parts[2];
-          const [dd, mm, yyyy] = dateStr.split('-');
-          const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
-          const today = new Date();
-          if (expiryDate < today) {
-            expired++;
-          } else {
-            active++;
-          }
+        // Dark mode functionality
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            darkModeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            });
         }
-      });
 
-      document.getElementById('totalVips').textContent = total;
-      document.getElementById('activeVips').textContent = active;
-      document.getElementById('expiredVips').textContent = expired;
-    }
-
-    function renderTable(list) {
-      tableBody.innerHTML = '';
-      currentDisplayedList = list;
-      
-      list.forEach((line) => {
-        const [hwid, user, date, role] = line.split(' ');
-        const tr = document.createElement('tr');
-        tr.className = "bg-white/10 rounded hover:bg-white/15";
-        tr.innerHTML = `
-          <td class="p-3" data-key="hwid">${hwid}</td>
-          <td class="p-3" data-key="user">${user}</td>
-          <td class="p-3 ${getStatusColor(date)}" data-key="date">${date}</td>
-          <td class="p-3" data-key="role">${role}</td>
-          <td class="p-3 space-x-2">
-            <button onclick="enableEdit(this, '${hwid}')" class="px-2 py-1 bg-yellow-300 text-black text-xs rounded hover:bg-yellow-400">Edit</button>
-            <button onclick="deleteLine('${hwid}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">Delete</button>
-          </td>`;
-        tableBody.appendChild(tr);
-      });
-    }
-
-    function getStatusColor(dateStr) {
-      if (!dateStr) return '';
-      const [dd, mm, yyyy] = dateStr.split('-');
-      const expiryDate = new Date(`${yyyy}-${mm}-${dd}`);
-      const today = new Date();
-      return expiryDate < today ? 'text-red-400' : 'text-green-400';
-    }
-
-    // Form handling
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const hwid = document.getElementById('hwid').value.trim();
-      const username = document.getElementById('username').value.trim();
-      const rawDate = document.getElementById('expiry').value;
-      const role = document.getElementById('role').value.trim();
-
-      if (!hwid || !username || !rawDate || !role) {
-        showToast("Please fill all fields", true);
-        return;
-      }
-
-      if (!isValidHWID(hwid)) {
-        showToast("Invalid HWID format", true);
-        return;
-      }
-
-      const expiry = formatDateForStorage(rawDate);
-      const line = `${hwid} ${username} ${expiry} ${role}`;
-
-      try {
-        document.getElementById('loading').classList.remove('hidden');
-        const res = await fetch(api('write-hwid'), {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ line })
-        });
-        const result = await res.json();
-        
-        if (result.success) {
-          await fetchHWIDs();
-          form.reset();
-          showToast("HWID added successfully");
-        } else {
-          showToast("Failed to add HWID", true);
+        // Enhanced login with animations
+        function login() {
+            const password = document.getElementById('password').value;
+            const correctPassword = 'fusion2025'; // Change this to your desired password
+            
+            if (password === correctPassword) {
+                showLoading();
+                setTimeout(() => {
+                    hideLoading();
+                    document.getElementById('auth').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    initDashboard();
+                }, 1500);
+            } else {
+                showNotification('❌ Incorrect password!', 'error');
+                document.getElementById('password').classList.add('shake');
+                setTimeout(() => {
+                    document.getElementById('password').classList.remove('shake');
+                }, 500);
+            }
         }
-      } catch (error) {
-        showToast("Error adding HWID", true);
-      } finally {
-        document.getElementById('loading').classList.add('hidden');
-      }
-    };
 
-    // Edit functions
-    function enableEdit(button, hwid) {
-      const row = button.closest('tr');
-      row.classList.add('editing');
-      
-      const cells = row.querySelectorAll('td[data-key]');
-      cells.forEach(cell => {
-        cell.setAttribute('contenteditable', 'true');
-        cell.classList.add('bg-white/20');
-      });
+        // Initialize dashboard with enhanced features
+        function initDashboard() {
+            updateStats();
+            renderTable();
+            initCharts();
+            setupEventListeners();
+            setupAutoCleanup();
+            initDarkMode();
+        }
 
-      button.innerHTML = '💾 Save';
-      button.classList.replace('bg-yellow-300', 'bg-green-500');
-      button.onclick = () => saveEdit(button, hwid);
-      
-      // Add cancel button
-      const cancelBtn = document.createElement('button');
-      cancelBtn.innerHTML = '❌ Cancel';
-      cancelBtn.className = 'px-2 py-1 bg-gray-500 text-white text-xs rounded ml-2 hover:bg-gray-600';
-      cancelBtn.onclick = () => fetchHWIDs();
-      button.parentNode.insertBefore(cancelBtn, button.nextSibling);
-    }
+        // Enhanced auto cleanup system
+        function setupAutoCleanup() {
+            if (autoCleanupEnabled) {
+                cleanupInterval = setInterval(autoDeleteExpired, 60000); // Check every minute
+            }
+        }
 
-    async function saveEdit(button, originalHwid) {
-      const row = button.closest('tr');
-      const cells = row.querySelectorAll('td[data-key]');
+        function toggleAutoCleanup() {
+            autoCleanupEnabled = !autoCleanupEnabled;
+            const statusElement = document.getElementById('cleanupStatus');
+            
+            if (autoCleanupEnabled) {
+                statusElement.textContent = '🔄 Auto-Clean: ON';
+                statusElement.parentElement.classList.remove('from-green-600', 'to-emerald-600');
+                statusElement.parentElement.classList.add('from-red-600', 'to-pink-600');
+                setupAutoCleanup();
+                showNotification('✅ Auto cleanup enabled!', 'success');
+            } else {
+                statusElement.textContent = '🔄 Auto-Clean: OFF';
+                statusElement.parentElement.classList.remove('from-red-600', 'to-pink-600');
+                statusElement.parentElement.classList.add('from-green-600', 'to-emerald-600');
+                clearInterval(cleanupInterval);
+                showNotification('⏸️ Auto cleanup disabled!', 'info');
+            }
+        }
 
-      const hwid = cells[0].textContent.trim();
-      const user = cells[1].textContent.trim();
-      let date = cells[2].textContent.trim();
-      const role = cells[3].textContent.trim();
+        function autoDeleteExpired() {
+            const today = new Date().toISOString().split('T')[0];
+            const initialCount = vipData.length;
+            
+            vipData = vipData.filter(user => user.expiry >= today);
+            
+            const deletedCount = initialCount - vipData.length;
+            if (deletedCount > 0) {
+                localStorage.setItem('vipData', JSON.stringify(vipData));
+                updateStats();
+                renderTable();
+                showNotification(`🗑️ Auto-deleted ${deletedCount} expired VIP(s)`, 'info');
+            }
+        }
 
-      if (!hwid || !user || !date || !role) {
-        showToast("All fields are required", true);
-        return;
-      }
+        // Enhanced statistics with trend analysis
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            const totalVips = vipData.length;
+            const activeVips = vipData.filter(user => user.expiry >= today).length;
+            const expiredVips = vipData.filter(user => user.expiry < today).length;
+            const expiringSoon = vipData.filter(user => user.expiry >= today && user.expiry <= nextWeek).length;
+            
+            // Animate number changes
+            animateNumber('totalVips', totalVips);
+            animateNumber('activeVips', activeVips);
+            animateNumber('expiredVips', expiredVips);
+            animateNumber('expiringSoon', expiringSoon);
+        }
 
-      if (date.includes("-") && date.split("-")[0].length === 4) {
-        date = formatDateForStorage(date);
-      }
+        function animateNumber(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            const currentValue = parseInt(element.textContent) || 0;
+            const step = (targetValue - currentValue) / 20;
+            let current = currentValue;
+            
+            const timer = setInterval(() => {
+                current += step;
+                if ((step > 0 && current >= targetValue) || (step < 0 && current <= targetValue)) {
+                    element.textContent = targetValue;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+            }, 50);
+        }
 
-      const line = `${hwid} ${user} ${date} ${role}`;
+        // Enhanced table rendering with status indicators
+        function renderTable() {
+            const tableBody = document.getElementById('vipTable');
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            
+            const filteredData = vipData.filter(user => 
+                user.hwid.toLowerCase().includes(searchTerm) ||
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.role.toLowerCase().includes(searchTerm)
+            );
+            
+            tableBody.innerHTML = filteredData.map((user, index) => {
+                const isExpired = new Date(user.expiry) < new Date();
+                const isExpiringSoon = !isExpired && new Date(user.expiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                
+                let statusClass = 'bg-green-500';
+                let statusText = 'Active';
+                let statusIcon = '✅';
+                
+                if (isExpired) {
+                    statusClass = 'bg-red-500';
+                    statusText = 'Expired';
+                    statusIcon = '❌';
+                } else if (isExpiringSoon) {
+                    statusClass = 'bg-yellow-500';
+                    statusText = 'Expiring Soon';
+                    statusIcon = '⚠️';
+                }
+                
+                return `
+                    <tr class="hover:bg-white/5 transition-all duration-300 border-b border-white/10">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" class="row-select rounded" data-index="${index}">
+                        </td>
+                        <td class="px-6 py-4 font-mono text-sm">${user.hwid}</td>
+                        <td class="px-6 py-4 font-semibold">${user.username}</td>
+                        <td class="px-6 py-4">${formatDate(user.expiry)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="status-indicator inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}/20 text-white">
+                                ${statusIcon} ${statusText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <button onclick="editUser(${index})" 
+                                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors duration-300">
+                                    ✏️ Edit
+                                </button>
+                                <button onclick="deleteUser(${index})" 
+                                        class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs transition-colors duration-300">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
-      try {
-        document.getElementById('loading').classList.remove('hidden');
-        const res = await fetch(api('edit-hwid'), {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ originalHwid, newLine: line })
+        // Enhanced form handling with validation
+        function setupEventListeners() {
+            document.getElementById('addForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const hwid = document.getElementById('hwid').value.trim();
+                const username = document.getElementById('username').value.trim();
+                const expiry = document.getElementById('expiry').value;
+                const role = document.getElementById('role').value;
+                
+                // Enhanced validation
+                if (!hwid || !username || !expiry) {
+                    showNotification('❌ Please fill all required fields!', 'error');
+                    return;
+                }
+                
+                if (vipData.some(user => user.hwid === hwid)) {
+                    showNotification('❌ HWID already exists!', 'error');
+                    return;
+                }
+                
+                const newUser = { hwid, username, expiry, role, createdAt: new Date().toISOString() };
+                vipData.push(newUser);
+                localStorage.setItem('vipData', JSON.stringify(vipData));
+                
+                updateStats();
+                renderTable();
+                this.reset();
+                showNotification('✅ VIP user added successfully!', 'success');
+            });
+            
+            document.getElementById('search').addEventListener('input', renderTable);
+            document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
+        }
+
+        // Charts initialization with Chart.js
+        function initCharts() {
+            // Status distribution chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            const today = new Date().toISOString().split('T')[0];
+            
+            const active = vipData.filter(user => user.expiry >= today).length;
+            const expired = vipData.filter(user => user.expiry < today).length;
+            
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Expired'],
+                    datasets: [{
+                        data: [active, expired],
+                        backgroundColor: ['#10B981', '#EF4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'VIP Status Distribution', color: '#fff' },
+                        legend: { labels: { color: '#fff' } }
+                    }
+                }
+            });
+            
+            // Trends chart (mock data for demo)
+            const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+            new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'New VIPs',
+                        data: [12, 19, 15, 25, 22, 18],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'VIP Registration Trends', color: '#fff' },
+                        legend: { labels: { color: '#fff' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold animate-fade-in ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 
+                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function editUser(index) {
+            const user = vipData[index];
+            // Implement edit functionality
+            showNotification('Edit functionality - Coming soon!', 'info');
+        }
+
+        function deleteUser(index) {
+            if (confirm('Are you sure you want to delete this VIP user?')) {
+                const username = vipData[index].username;
+                vipData.splice(index, 1);
+                localStorage.setItem('vipData', JSON.stringify(vipData));
+                updateStats();
+                renderTable();
+                showNotification(`🗑️ Deleted user: ${username}`, 'info');
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const rowSelects = document.querySelectorAll('.row-select');
+            
+            rowSelects.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function exportData() {
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "HWID,Username,Expiry Date,Role,Status\n" +
+                vipData.map(user => {
+                    const isExpired = new Date(user.expiry) < new Date();
+                    const status = isExpired ? 'Expired' : 'Active';
+                    return `${user.hwid},${user.username},${user.expiry},${user.role},${status}`;
+                }).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `vip_data_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('📊 Data exported successfully!', 'success');
+        }
+
+        function bulkActions() {
+            const selectedRows = document.querySelectorAll('.row-select:checked');
+            if (selectedRows.length === 0) {
+                showNotification('⚠️ Please select users first!', 'warning');
+                return;
+            }
+            
+            // Implement bulk actions
+            showNotification(`Selected ${selectedRows.length} users. Bulk actions coming soon!`, 'info');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum date to today for expiry input
+            document.getElementById('expiry').min = new Date().toISOString().split('T')[0];
+            
+            // Enable Enter key for login
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
         });
-        
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Failed to save changes');
-
-        await fetchHWIDs();
-        showToast("Changes saved");
-      } catch (error) {
-        showToast(error.message, true);
-        console.error('Edit error:', error);
-      } finally {
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }
-
-    // Delete function
-    async function deleteLine(hwid) {
-      if (!confirm("Are you sure you want to delete this HWID?")) return;
-      
-      try {
-        document.getElementById('loading').classList.remove('hidden');
-        const res = await fetch(api('delete-hwid'), {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ hwid })
-        });
-        
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Failed to delete HWID');
-
-        await fetchHWIDs();
-        showToast("HWID deleted");
-      } catch (error) {
-        showToast(error.message, true);
-        console.error('Delete error:', error);
-      } finally {
-        document.getElementById('loading').classList.add('hidden');
-      }
-    }
-
-    // Search function
-    searchInput.addEventListener('input', () => {
-      const keyword = searchInput.value.toLowerCase();
-      const filtered = hwidList.filter(line => line.toLowerCase().includes(keyword));
-      renderTable(filtered);
-    });
-   
-    // Helper functions
-    function isValidHWID(hwid) {
-      return hwid.length > 10 && /^[a-zA-Z0-9-]+$/.test(hwid);
-    }
-
-    function formatDateForStorage(dateStr) {
-      const [yyyy, mm, dd] = dateStr.split('-');
-      return `${dd}-${mm}-${yyyy}`;
-    }
-
-    function exportToCSV() {
-      if (hwidList.length === 0) {
-        showToast("No data to export", true);
-        return;
-      }
-
-      const headers = ['HWID', 'Username', 'Expiry', 'Role'];
-      const csvContent = [
-        headers.join(','),
-        ...hwidList.map(line => line.replace(/ /g, ','))
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fusionvip-hwids-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      showToast("Export started");
-    }
-
-    function showToast(message, isError = false) {
-      const toast = document.createElement('div');
-      toast.className = `fixed top-4 right-4 p-4 rounded shadow-lg ${
-        isError ? 'bg-red-500' : 'bg-green-500'
-      } text-white animate-fadeInOut z-50`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-  </script>
+    </script>
 </body>
 </html>
